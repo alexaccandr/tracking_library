@@ -7,11 +7,13 @@ object ModelAdapter {
 
     fun adaptTrack(item: TrackRecord): Track {
         return Track(
+            item.id,
             item.startDate,
             item.finishDate,
             SpeedUtils.calcAverageSpeed(item.totalTime, item.totalDistance),
             item.locations.map {
                 TrackPoint(
+                    item.id,
                     it.lat,
                     it.lon,
                     it.date
@@ -20,7 +22,7 @@ object ModelAdapter {
         )
     }
 
-    fun adaptTracks(item: Collection<TrackRecord>): Array<Track> {
+    fun adaptTracks(item: List<TrackRecord>): Array<Track> {
         return item.map {
             adaptTrack(it)
         }.toTypedArray()

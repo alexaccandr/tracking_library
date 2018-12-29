@@ -13,6 +13,9 @@ import android.os.IBinder
 import android.os.Process
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.TrackRecorder
+import com.trackinglibrary.Utils.NotificationUtils
+import com.trackinglibrary.database.TrackRecordDao
+import io.realm.Realm
 import java.util.concurrent.TimeUnit
 
 
@@ -34,8 +37,12 @@ internal class TrackingService : Service(), LocationListener {
         if (mLocationManager == null) {
             return
         }
-
         settings = TrackerSettings(this)
+
+        startForeground(
+            NotificationUtils.FOREGROUND_SERVICE_ID,
+            NotificationUtils.createOrUpdateTrackerNotification(this)
+        )
 
         initLocationHandler()
         registerLocationListener()
@@ -44,7 +51,10 @@ internal class TrackingService : Service(), LocationListener {
     private fun initLocationHandler() {
         val s = settings!!
         val saveLocationFrequency = settings!!.getFrequency()
-        locationHandler = LocationHandler(saveLocationFrequency) {
+        val lastLocTime = Realm.getDefaultInstance().use {
+            TrackRecordDao(it).lastLocationTime()
+        }
+        locationHandler = LocationHandler(saveLocationFrequency, lastLocTime) {
             TrackRecorder.executeUpdateAverageSpeed(it)
         }
         s.registerFrequencyChangedListener {

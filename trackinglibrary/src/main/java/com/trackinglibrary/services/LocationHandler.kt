@@ -8,10 +8,9 @@ import java.util.concurrent.TimeUnit
 
 internal class LocationHandler(
     var saveFreqTime: Long/*in millis*/,
+    var lastSavedLocationTime: Long = 0L,
     val distanceListener: (Pair<Long, Double>) -> Unit
 ) {
-
-    private var lastSavedLocationTime = 0L
 
     // for calc average speed
     var lastLocation: Location? = null

@@ -1,9 +1,21 @@
 package com.trackinglibrary.Utils
 
+import android.content.Context
 import io.realm.Realm
+import io.realm.RealmConfiguration
 import java.io.Closeable
 
-internal object DatabaseUtils {
+object DatabaseUtils {
+
+    fun initDatabase(context: Context) {
+        Realm.init(context)
+
+        val config = RealmConfiguration.Builder()
+            .schemaVersion(1)
+            .name("tracker.database").build()
+        Realm.setDefaultConfiguration(config)
+    }
+
     fun valid(realm: Realm?): Boolean {
         return realm != null && !realm.isClosed
     }
@@ -12,30 +24,7 @@ internal object DatabaseUtils {
         closeQuietly(realm)
     }
 
-    fun closeQuietly(realm: Realm?, removeListeners: Boolean): Realm? {
-        if (realm != null && !realm.isClosed) {
-            if (realm.isInTransaction) {
-                try {
-                    realm.cancelTransaction()
-                } catch (e: Exception) {
-                    //ignored
-                }
-
-            }
-            if (removeListeners) {
-                try {
-                    realm.removeAllChangeListeners()
-                } catch (e: Exception) {
-                    //ignored
-                }
-
-            }
-            closeQuietly(realm)
-        }
-        return null
-    }
-
-    fun <C : Closeable> closeQuietly(closeable: C?): C? {
+    private fun <C : Closeable> closeQuietly(closeable: C?): C? {
         if (closeable != null) {
             try {
                 closeable.close()
@@ -50,4 +39,6 @@ internal object DatabaseUtils {
     fun executeTransaction(realm: Realm, transaction: Realm.Transaction) {
         realm.executeTransaction(transaction)
     }
+
+    fun openDB(): Realm = Realm.getDefaultInstance()
 }

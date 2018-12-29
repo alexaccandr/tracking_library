@@ -4,28 +4,43 @@ import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
+import android.util.Log
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.Utils.DatabaseUtils
 import com.trackinglibrary.Utils.RxBus
 import com.trackinglibrary.Utils.SpeedUtils
+import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
+import com.trackinglibrary.model.ModelAdapter
 import com.trackinglibrary.model.TrackAverageSpeed
+import com.trackinglibrary.model.TrackPoint
 import com.trackinglibrary.model.TrackStatus
 import io.realm.Realm
 
-internal class TrackHandlerQueue(val settings: TrackerSettings, looper: Looper) : Handler(looper) {
+internal class TrackHandlerQueue constructor(val settings: TrackerSettings, looper: Looper) : Handler(looper) {
+
+    val tag = TrackHandlerQueue::class.java.simpleName
 
     private companion object {
         const val MSG_START_TRACK = 0
         const val MSG_STOP_TRACK = 1
-        const val MSG_LOCATION = 2
-        const val MSG_FREQUENCY = 3
-        const val MSG_AVERAGE_SPEED_DATA = 4
+        const val MSG_SAVE_LOCATION = 2
+        const val MSG_SAVE_FREQUENCY = 3
+        const val MSG_SAVE_AVERAGE_SPEED_DATA = 4
     }
 
     private var realm: Realm? = null
-    private var dao: TrackRecordDao? = null
-    private var trackId: String? = null
+    private var track: TrackRecord? = null
+
+    init {
+        post {
+            realm = Realm.getDefaultInstance()
+            track = TrackRecordDao(realm!!).lastTrack()
+            if (track == null) {
+                DatabaseUtils.close(realm)
+            }
+        }
+    }
 
     override fun handleMessage(msg: Message?) {
         super.handleMessage(msg)
@@ -36,89 +51,106 @@ internal class TrackHandlerQueue(val settings: TrackerSettings, looper: Looper) 
 
         when (msg.what) {
             MSG_START_TRACK -> {
-                if (trackId == null) {
-                    realm = Realm.getDefaultInstance()
-                    dao = TrackRecordDao(realm!!)
+                Log.d(tag, "msg: MSG_START_TRACK")
+                if (track == null) {
+                    realm = DatabaseUtils.openDB()
                     val startTime = msg.obj as Long
 
                     // open track
-                    DatabaseUtils.executeTransaction(realm!!, Realm.Transaction {
-                        trackId = dao!!.createTrack(startTime)
-                    })
+                    createTrack(startTime)
 
-                    notifyTrackStarted(true)
+                    notifyTrackStarted(track!!, true)
                 }
             }
             MSG_STOP_TRACK -> {
-                if (trackId != null) {
+                Log.d(tag, "msg: MSG_STOP_TRACK")
+                if (track != null) {
                     val stopTime = msg.obj as Long
 
                     // close track
                     stopTrack(realm!!, stopTime)
-                    trackId = null
+
+                    notifyTrackStarted(track!!, false)
 
                     // close database
                     DatabaseUtils.close(realm)
-                    dao = null
 
-                    notifyTrackStarted(false)
+                    track = null
                 }
             }
-            MSG_LOCATION -> {
-                if (trackId != null) {
+            MSG_SAVE_LOCATION -> {
+                Log.d(tag, "msg: MSG_SAVE_LOCATION")
+                if (track != null) {
                     val location = msg.obj as Location
 
                     // add location
-                    saveLocation(realm!!, trackId!!, location)
+                    saveLocation(realm!!, track!!.id, location)
+
+                    notifyLocationChanged(track!!.id, location)
                 }
             }
-            MSG_FREQUENCY -> {
-                if (trackId != null) {
+            MSG_SAVE_FREQUENCY -> {
+                Log.d(tag, "msg: MSG_SAVE_FREQUENCY")
+                if (track != null) {
                     val frequency = msg.obj as Long
 
                     // update frequency
                     saveFrequency(frequency)
                 }
             }
-            MSG_AVERAGE_SPEED_DATA -> {
-                if (trackId != null) {
+            MSG_SAVE_AVERAGE_SPEED_DATA -> {
+                Log.d(tag, "msg: MSG_SAVE_AVERAGE_SPEED_DATA")
+                if (track != null) {
                     val data = msg.obj as Pair<Long, Double>
 
                     // update average speed data
-                    updateAverageSpeed(realm!!, trackId!!, data)
+                    updateAverageSpeed(realm!!, track!!.id, data)
 
-                    val track = dao!!.selectTrack(trackId!!)
-                    val averageSpeed =
-                        SpeedUtils.calcAverageSpeed(track.totalTime, track.totalDistance)
+                    val averageSpeed = SpeedUtils.calcAverageSpeed(track!!.totalTime, track!!.totalDistance)
                     notifyAverageSpeedChanged(averageSpeed)
                 }
             }
         }
     }
 
+    private fun createTrack(startTime: Long) {
+        Log.d(tag, "createTrack: startTime=$startTime")
+        DatabaseUtils.executeTransaction(realm!!, Realm.Transaction {
+            track = TrackRecordDao(realm!!).createTrack(startTime)
+        })
+        Log.d(tag, "createTrack: new trackId=${track!!.id}")
+    }
+
     private fun stopTrack(realm: Realm, stopTime: Long) {
+        Log.d(tag, "stopTrack: stopTime=$stopTime")
         DatabaseUtils.executeTransaction(realm, Realm.Transaction {
-            dao!!.stopTrack(trackId!!, stopTime)
+            TrackRecordDao(it).stopTrack(track!!.id, stopTime)
         })
     }
 
     private fun saveLocation(realm: Realm, trackId: String, location: Location) {
+        Log.d(
+            tag,
+            "saveLocation: trackId=$trackId, location=(" + location.latitude + ", " + location.longitude + ", " + location.time + ")"
+        )
         DatabaseUtils.executeTransaction(realm, Realm.Transaction {
-            dao!!.saveLocation(trackId, location.latitude, location.longitude, location.time)
+            TrackRecordDao(it).saveLocation(trackId, location.latitude, location.longitude, location.time)
         })
     }
 
     private fun saveFrequency(frequency: Long) {
+        Log.d(tag, "saveFrequency: frequency=$frequency")
         settings.executeTransaction {
             settings.setFrequency(frequency)
         }
     }
 
     private fun updateAverageSpeed(realm: Realm, trackId: String, data: Pair<Long, Double>) {
-        val track = dao!!.selectTrack(trackId)
+        Log.d(tag, "updateAverageSpeed: trackId=$trackId, data=(" + data.first + ", " + data.second + ")")
+        val track = TrackRecordDao(realm).selectTrack(trackId)
 
         DatabaseUtils.executeTransaction(realm, Realm.Transaction {
-            dao!!.updateAverageSpeed(
+            TrackRecordDao(it).updateAverageSpeed(
                 track,
                 track.totalTime + data.first,
                 track.totalDistance + data.second
@@ -130,8 +162,12 @@ internal class TrackHandlerQueue(val settings: TrackerSettings, looper: Looper) 
         RxBus.publish(TrackAverageSpeed(averageSpeed))
     }
 
-    private fun notifyTrackStarted(started: Boolean) {
-        RxBus.publish(TrackStatus(started))
+    private fun notifyTrackStarted(track: TrackRecord, started: Boolean) {
+        RxBus.publish(TrackStatus(ModelAdapter.adaptTrack(track), started))
+    }
+
+    private fun notifyLocationChanged(id: String, location: Location) {
+        RxBus.publish(TrackPoint(id, location.latitude, location.longitude, location.time))
     }
 
     internal fun putQueueStartTrack(startTime: Long) {
@@ -150,21 +186,21 @@ internal class TrackHandlerQueue(val settings: TrackerSettings, looper: Looper) 
 
     internal fun putQueueSaveLocation(location: Location) {
         val message = Message()
-        message.what = TrackHandlerQueue.MSG_LOCATION
+        message.what = TrackHandlerQueue.MSG_SAVE_LOCATION
         message.obj = location
         sendMessage(message)
     }
 
     internal fun putQueueUpdateFrequency(frequency: Long) {
         val message = Message()
-        message.what = TrackHandlerQueue.MSG_FREQUENCY
+        message.what = TrackHandlerQueue.MSG_SAVE_FREQUENCY
         message.obj = frequency
         sendMessage(message)
     }
 
     fun putQueueUpdateAverageSpeed(data: Pair<Long, Double>) {
         val message = Message()
-        message.what = TrackHandlerQueue.MSG_AVERAGE_SPEED_DATA
+        message.what = TrackHandlerQueue.MSG_SAVE_AVERAGE_SPEED_DATA
         message.obj = data
         sendMessage(message)
     }

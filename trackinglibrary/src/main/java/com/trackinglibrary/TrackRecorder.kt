@@ -3,20 +3,18 @@ package com.trackinglibrary
 import android.app.Application
 import android.location.Location
 import android.os.HandlerThread
-import android.os.Process
 import android.util.Log
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.Utils.ContextUtils
+import com.trackinglibrary.Utils.DatabaseUtils
 import com.trackinglibrary.Utils.RxBus
 import com.trackinglibrary.database.TrackRecordDao
-import com.trackinglibrary.model.ModelAdapter
-import com.trackinglibrary.model.Track
-import com.trackinglibrary.model.TrackAverageSpeed
-import com.trackinglibrary.model.TrackStatus
+import com.trackinglibrary.model.*
 import com.trackinglibrary.services.TrackingService
+import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
 import io.realm.Realm
-import org.joda.time.DateTime
+import java.util.*
 
 
 object TrackRecorder {
@@ -33,22 +31,15 @@ object TrackRecorder {
             // already initialized
             return
         }
+        initialized = true
 
         this.context = context
 
+        DatabaseUtils.initDatabase(context)
         startQueue()
         if (shouldContinueRecording()) {
             continueRecording()
         }
-        initialized = true
-    }
-
-    private fun startQueue() {
-        val handlerThread = HandlerThread("trackRecorderQueue", Process.THREAD_PRIORITY_BACKGROUND)
-        handlerThread.start()
-        val looper = handlerThread.looper
-        val settings = TrackerSettings(context)
-        handlerQueue = TrackHandlerQueue(settings, looper)
     }
 
     @Synchronized
@@ -59,10 +50,10 @@ object TrackRecorder {
             return
         }
 
-        started = true
-        val startTime = DateTime.now().millis
+        val startTime = Calendar.getInstance().timeInMillis
         executeStartTrack(startTime)
         startGpsService()
+        started = true
     }
 
     @Synchronized
@@ -73,18 +64,20 @@ object TrackRecorder {
             return
         }
 
-        started = false
         stopGpsService()
-        executeStopTrack(DateTime.now().millis)
+        executeStopTrack(Calendar.getInstance().timeInMillis)
+        started = false
     }
 
     fun hasStarted(): Boolean {
         checkInitialized()
 
-        val realm = Realm.getDefaultInstance()
-        realm.use {
-            val dao = TrackRecordDao(realm)
-            return dao.hasStartedTrack()
+        return hasStarted0()
+    }
+
+    private fun hasStarted0(): Boolean {
+        Realm.getDefaultInstance().use {
+            return TrackRecordDao(it).hasStartedTrack()
         }
     }
 
@@ -102,16 +95,30 @@ object TrackRecorder {
         }
     }
 
-    fun registerAverageSpeedChangeListener(listener: (TrackAverageSpeed) -> Unit): Disposable? {
-        return RxBus.listen(TrackAverageSpeed::class.java).subscribe {
+    fun registerAverageSpeedChangeListener(scheduler: Scheduler, listener: (TrackAverageSpeed) -> Unit): Disposable {
+        return RxBus.listen(TrackAverageSpeed::class.java).observeOn(scheduler).subscribe {
             listener(it)
         }
     }
 
-    fun registerTrackStatusChangeListener(listener: (TrackStatus) -> Unit): Disposable? {
-        return RxBus.listen(TrackStatus::class.java).subscribe {
+    fun registerTrackStatusChangeListener(scheduler: Scheduler, listener: (TrackStatus) -> Unit): Disposable {
+        return RxBus.listen(TrackStatus::class.java).observeOn(scheduler).subscribe {
             listener(it)
         }
+    }
+
+    fun registerTrackLocationChangeListener(scheduler: Scheduler, listener: (TrackPoint) -> Unit): Disposable {
+        return RxBus.listen(TrackPoint::class.java).observeOn(scheduler).subscribe {
+            listener(it)
+        }
+    }
+
+    private fun startQueue() {
+        val handlerThread = HandlerThread("trackRecorderQueue")
+        handlerThread.start()
+        val looper = handlerThread.looper
+        val settings = TrackerSettings(context)
+        handlerQueue = TrackHandlerQueue(settings, looper)
     }
 
     private fun checkInitialized() {
@@ -125,7 +132,7 @@ object TrackRecorder {
         startGpsService()
     }
 
-    private fun shouldContinueRecording(): Boolean = hasStarted()
+    private fun shouldContinueRecording(): Boolean = hasStarted0()
 
     private fun startGpsService() {
         ContextUtils.startService(context, TrackingService::class.java)

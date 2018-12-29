@@ -1,3 +1,3 @@
 package com.trackinglibrary.model
 
-class TrackPoint(val lat: Double, val lon: Double, val date: Long)
+class TrackPoint(val trackId: String, val lat: Double, val lon: Double, val date: Long)

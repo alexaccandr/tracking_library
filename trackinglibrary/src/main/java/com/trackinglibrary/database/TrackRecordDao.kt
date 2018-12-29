@@ -6,16 +6,17 @@ import java.util.*
 
 internal class TrackRecordDao(val realm: Realm) {
 
+    fun lastTrackId(): String? = realm.where(TrackRecord::class.java).isNull("finishDate").findFirst()?.id
+
     fun hasStartedTrack(): Boolean {
-        val it = realm.where(TrackRecord::class.java).isNull("").findFirst()
+        val it = realm.where(TrackRecord::class.java).isNull("finishDate").findFirst()
         return it != null
     }
 
-    fun createTrack(startTime: Long): String {
+    fun createTrack(startTime: Long): TrackRecord {
         val idStr = UUID.randomUUID().toString()
         val item = TrackRecord(id = idStr, startDate = startTime)
-        realm.copyToRealm(item)
-        return idStr
+        return realm.copyToRealm(item)
     }
 
     fun stopTrack(id: String, stopTime: Long) {
@@ -42,5 +43,12 @@ internal class TrackRecordDao(val realm: Realm) {
 
     fun selectTracks(): RealmResults<TrackRecord> {
         return realm.where(TrackRecord::class.java).findAll()
+    }
+
+    fun lastTrack(): TrackRecord? = realm.where(TrackRecord::class.java).isNull("finishDate").findFirst()
+
+    fun lastLocationTime(): Long {
+        val lastTrack = lastTrack()
+        return lastTrack?.locations?.maxBy { it.date }?.date ?: 0L
     }
 }
