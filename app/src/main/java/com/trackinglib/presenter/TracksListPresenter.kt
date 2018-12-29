@@ -44,7 +44,7 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
             }
         })
 
-        val tracks = TrackRecorder.getTracks()
+        val tracks = TrackRecorder.getTracks().sortedByDescending { it.startDate }
         tracks.forEach {
             if (it.locations.isNotEmpty()) {
                 updateLocation(it.id, it.locations[0].lat, it.locations[0].lon)
