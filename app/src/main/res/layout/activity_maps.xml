@@ -1,9 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
-<fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:map="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/map"
-    android:name="com.google.android.gms.maps.SupportMapFragment"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:lint="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".view.MapsActivity" />
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/startDateTitleView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:text="Дата старта:         "
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/startDateView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_toRightOf="@+id/startDateTitleView"
+        lint:text="10.10.2010" />
+
+    <TextView
+        android:id="@+id/locationTitleView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/startDateTitleView"
+        android:layout_marginLeft="10dp"
+        android:text="Адрес старта: "
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/locationView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/startDateTitleView"
+        android:layout_marginRight="10dp"
+        android:layout_toRightOf="@+id/startDateTitleView"
+        lint:text="Москва\ndsdsa" />
+
+    <TextView
+        android:id="@+id/locationEndTitleView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/locationView"
+        android:layout_alignParentLeft="@+id/locationTitleView"
+        android:layout_marginLeft="10dp"
+        android:text="Адрес стопа: "
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/locationEndView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/locationView"
+        android:layout_marginRight="10dp"
+        android:layout_toRightOf="@+id/startDateTitleView"
+        lint:text="Москва" />
+
+    <fragment
+        android:id="@+id/map"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/locationEndTitleView"
+        android:layout_marginTop="20dp" />
+</RelativeLayout>

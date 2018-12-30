@@ -6,9 +6,16 @@
     android:padding="10dp">
 
     <TextView
+        android:id="@+id/numberView"
+        android:layout_width="30dp"
+        android:layout_height="wrap_content"
+        lint:text="#2" />
+
+    <TextView
         android:id="@+id/startDateTitleView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/numberView"
         android:text="Дата старта:   "
         android:textStyle="bold" />
 
@@ -24,6 +31,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/startDateTitleView"
+        android:layout_alignLeft="@+id/startDateTitleView"
         android:text="Адрес: "
         android:textStyle="bold" />
 

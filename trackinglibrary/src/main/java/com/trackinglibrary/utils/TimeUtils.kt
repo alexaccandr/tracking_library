@@ -1,4 +1,4 @@
-package com.trackinglibrary.Utils
+package com.trackinglibrary.utils
 
 internal object TimeUtils {
     private val SECOND = 1000

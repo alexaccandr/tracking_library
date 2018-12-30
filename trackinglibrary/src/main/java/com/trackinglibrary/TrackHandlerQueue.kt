@@ -6,9 +6,9 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import com.kite.model.settings.TrackerSettings
-import com.trackinglibrary.Utils.DatabaseUtils
-import com.trackinglibrary.Utils.RxBus
-import com.trackinglibrary.Utils.SpeedUtils
+import com.trackinglibrary.utils.DatabaseUtils
+import com.trackinglibrary.utils.RxBus
+import com.trackinglibrary.utils.SpeedUtils
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.ModelAdapter

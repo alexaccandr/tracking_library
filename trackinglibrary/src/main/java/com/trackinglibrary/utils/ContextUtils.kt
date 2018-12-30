@@ -1,4 +1,4 @@
-package com.trackinglibrary.Utils
+package com.trackinglibrary.utils
 
 import android.content.Context
 import android.content.Intent

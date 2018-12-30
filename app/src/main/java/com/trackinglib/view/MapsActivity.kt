@@ -1,18 +1,28 @@
 package com.trackinglib.view
 
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-
+import com.arellomobile.mvp.MvpAppCompatActivity
+import com.arellomobile.mvp.presenter.InjectPresenter
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.PolylineOptions
 import com.trackinglib.R
+import com.trackinglib.presenter.MapPresenter
+import com.trackinglibrary.model.Track
+import kotlinx.android.synthetic.main.activity_maps.*
 
-class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+class MapsActivity : MvpAppCompatActivity(), OnMapReadyCallback, MapView {
 
+    companion object {
+        val EXTRA_TRACK_ID = "extra_track_id"
+    }
+
+    @InjectPresenter
+    lateinit var presenter: MapPresenter
     private lateinit var mMap: GoogleMap
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,9 +46,50 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
 
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        val extras = intent.extras
+        val trackId = extras.getString(EXTRA_TRACK_ID, null)
+        presenter.init(trackId)
+    }
+
+    override fun onTrackLoaded(track: Track) {
+        if (track.locations.isNotEmpty()) {
+            track.locations.forEachIndexed { index, point ->
+                val latLonPoint = LatLng(point.lat, point.lon)
+                mMap.addMarker(MarkerOptions().position(latLonPoint))
+                if (index == track.locations.size - 1) {
+//                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latLonPoint))
+                    mMap.animateCamera(
+                        CameraUpdateFactory.newLatLngZoom(
+                            latLonPoint,
+                            10.0f
+                        )
+                    )
+                }
+            }
+
+            if (track.locations.size > 1) {
+                mMap.addPolyline(
+                    (PolylineOptions())
+                        .clickable(true)
+                        .addAll(track.locations
+                            .sortedBy { it.date }
+                            .map {
+                                LatLng(it.lat, it.lon)
+                            })
+                )
+            }
+        }
+    }
+
+    override fun updateStartDate(date: String) {
+        startDateView.text = date
+    }
+
+    override fun updateStartLocation(address: String) {
+        locationView.text = address
+    }
+
+    override fun updateFinishLocation(address: String) {
+        locationEndView.text = address
     }
 }

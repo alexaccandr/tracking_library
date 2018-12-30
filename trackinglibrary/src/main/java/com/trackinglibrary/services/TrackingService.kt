@@ -13,7 +13,7 @@ import android.os.IBinder
 import android.os.Process
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.TrackRecorder
-import com.trackinglibrary.Utils.NotificationUtils
+import com.trackinglibrary.utils.NotificationUtils
 import com.trackinglibrary.database.TrackRecordDao
 import io.realm.Realm
 import java.util.concurrent.TimeUnit

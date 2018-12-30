@@ -1,4 +1,4 @@
-package com.trackinglibrary.Utils
+package com.trackinglibrary.utils
 
 import android.location.Location
 import android.location.LocationManager

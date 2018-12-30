@@ -5,9 +5,10 @@ import android.location.Location
 import android.os.HandlerThread
 import android.util.Log
 import com.kite.model.settings.TrackerSettings
-import com.trackinglibrary.Utils.ContextUtils
-import com.trackinglibrary.Utils.DatabaseUtils
-import com.trackinglibrary.Utils.RxBus
+import com.trackinglibrary.utils.ContextUtils
+import com.trackinglibrary.utils.DatabaseUtils
+import com.trackinglibrary.utils.RxBus
+import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.*
 import com.trackinglibrary.services.TrackingService
@@ -95,19 +96,37 @@ object TrackRecorder {
         }
     }
 
-    fun registerAverageSpeedChangeListener(scheduler: Scheduler, listener: (TrackAverageSpeed) -> Unit): Disposable {
+    fun getTrack(id: String): Track {
+        val realm = Realm.getDefaultInstance()
+        realm.use {
+            val dao = TrackRecordDao(realm)
+            val track: TrackRecord = dao.selectTrack(id)
+            return ModelAdapter.adaptTrack(track)
+        }
+    }
+
+    fun registerAverageSpeedChangeListener(
+        scheduler: Scheduler,
+        listener: (TrackAverageSpeed) -> Unit
+    ): Disposable {
         return RxBus.listen(TrackAverageSpeed::class.java).observeOn(scheduler).subscribe {
             listener(it)
         }
     }
 
-    fun registerTrackStatusChangeListener(scheduler: Scheduler, listener: (TrackStatus) -> Unit): Disposable {
+    fun registerTrackStatusChangeListener(
+        scheduler: Scheduler,
+        listener: (TrackStatus) -> Unit
+    ): Disposable {
         return RxBus.listen(TrackStatus::class.java).observeOn(scheduler).subscribe {
             listener(it)
         }
     }
 
-    fun registerTrackLocationChangeListener(scheduler: Scheduler, listener: (TrackPoint) -> Unit): Disposable {
+    fun registerTrackLocationChangeListener(
+        scheduler: Scheduler,
+        listener: (TrackPoint) -> Unit
+    ): Disposable {
         return RxBus.listen(TrackPoint::class.java).observeOn(scheduler).subscribe {
             listener(it)
         }

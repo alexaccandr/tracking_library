@@ -11,13 +11,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 
-class TracksListAdapter(private val items: MutableList<TrackViewModel>) : RecyclerView.Adapter<TracksListAdapter.MyViewHolder>() {
+class TracksListAdapter(private val items: MutableList<TrackViewModel>, val block: (String) -> Unit) :
+    RecyclerView.Adapter<TracksListAdapter.MyViewHolder>() {
 
     var format = SimpleDateFormat("d MMMM, yyyy hh:mm:ss")
 
     class MyViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         val titleDate = view.startDateView
         val titleLocation = view.locationView
+        val number = view.numberView
     }
 
     override fun onCreateViewHolder(
@@ -32,6 +34,10 @@ class TracksListAdapter(private val items: MutableList<TrackViewModel>) : Recycl
         val date = Date(it.date)
         holder.titleDate.text = format.format(date)
         holder.titleLocation.text = it.location
+        holder.number.text = "#${items.size - (position)}"
+        holder.view.setOnClickListener {
+            block(items[position].id)
+        }
     }
 
     override fun getItemCount() = items.size

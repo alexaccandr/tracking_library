@@ -1,6 +1,6 @@
 package com.trackinglibrary.model
 
-import com.trackinglibrary.Utils.SpeedUtils
+import com.trackinglibrary.utils.SpeedUtils
 import com.trackinglibrary.database.TrackRecord
 
 object ModelAdapter {

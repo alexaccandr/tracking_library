@@ -5,6 +5,7 @@ import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
 import com.trackinglib.App
 import com.trackinglib.model.geocoder.GeoCoderApi
+import com.trackinglib.untils.GeocoderUtils
 import com.trackinglib.untils.ViewModelAdapter
 import com.trackinglib.view.TracksListView
 import com.trackinglibrary.TrackRecorder
@@ -33,7 +34,7 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
                 viewState.appendTrack(ViewModelAdapter.adaptTrack(it.track))
                 if (it.track.locations.isNotEmpty()) {
                     lastTrackLocationUpdated = true
-                    updateLocation(it.track.id, it.track.locations[0].lat, it.track.locations[0].lon)
+                    updateLocation(it.track.id, it.track.locations.first().lat, it.track.locations.first().lon)
                 }
             }
         })
@@ -47,7 +48,7 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
         val tracks = TrackRecorder.getTracks().sortedByDescending { it.startDate }
         tracks.forEach {
             if (it.locations.isNotEmpty()) {
-                updateLocation(it.id, it.locations[0].lat, it.locations[0].lon)
+                updateLocation(it.id, it.locations.first().lat, it.locations.first().lon)
             }
         }
         viewState.updateTracksList(tracks.map {
@@ -58,7 +59,7 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
     private fun updateLocation(id: String, lat: Double, lon: Double) {
         val d = GeoCoderApi.execute(geocoder, lat, lon) { address ->
             if (address.locality != null) {
-                viewState.updateTrackLocation(id, address.locality)
+                viewState.updateTrackLocation(id, GeocoderUtils.getAddressLine(address))
             }
         }
         disposables!!.add(d)
@@ -70,5 +71,9 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
         if (d != null && !d.isDisposed) {
             d.dispose()
         }
+    }
+
+    fun trackSelected(id: String) {
+        viewState.openMapActivity(id)
     }
 }

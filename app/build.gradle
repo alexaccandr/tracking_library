@@ -46,4 +46,9 @@ dependencies {
     // dagger
     implementation "com.google.dagger:dagger:$dagger2_version"
     kapt "com.google.dagger:dagger-compiler:$dagger2_version"
+
+
+    implementation "com.google.android.gms:play-services-maps:16.0.0"
+
+    implementation 'com.jjoe64:graphview:4.2.2'
 }

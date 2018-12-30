@@ -3,7 +3,7 @@ package com.trackinglibrary.services
 import android.location.Location
 import android.util.Log
 import com.trackinglibrary.TrackRecorder
-import com.trackinglibrary.Utils.LocationUtils
+import com.trackinglibrary.utils.LocationUtils
 import java.util.concurrent.TimeUnit
 
 internal class LocationHandler(

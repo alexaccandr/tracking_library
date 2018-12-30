@@ -53,6 +53,7 @@ class MainActivity : AppCompatActivity() {
             return when (position) {
                 0 -> StartTrackerFragment()
                 1 -> TracksListFragment()
+                2 -> GraphFragment()
                 else -> PlaceholderFragment.newInstance(position + 1)
             }
 //            return PlaceholderFragment.newInstance(position + 1)

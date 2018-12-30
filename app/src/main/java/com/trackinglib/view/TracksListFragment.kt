@@ -1,5 +1,6 @@
 package com.trackinglib.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -11,7 +12,6 @@ import com.arellomobile.mvp.presenter.InjectPresenter
 import com.trackinglib.R
 import com.trackinglib.presenter.TracksListPresenter
 import com.trackinglib.viewmodel.TrackViewModel
-import com.trackinglibrary.model.Track
 import kotlinx.android.synthetic.main.fragment_track_list.*
 
 class TracksListFragment : MvpAppCompatFragment(), TracksListView {
@@ -44,7 +44,9 @@ class TracksListFragment : MvpAppCompatFragment(), TracksListView {
     }
 
     override fun updateTracksList(tracks: Array<TrackViewModel>) {
-        viewAdapter = TracksListAdapter(tracks.toMutableList())
+        viewAdapter = TracksListAdapter(tracks.toMutableList()) {
+            presenter.trackSelected(it)
+        }
         recycleView.apply {
             // specify an viewAdapter (see also next example)
             adapter = viewAdapter
@@ -58,5 +60,12 @@ class TracksListFragment : MvpAppCompatFragment(), TracksListView {
 
     override fun updateTrackLocation(id: String, location: String) {
         viewAdapter.updateTrackLocation(id, location)
+    }
+
+    override fun openMapActivity(id: String) {
+        val context = activity
+        if (context != null) {
+            startActivity(Intent(context, MapsActivity::class.java).putExtra(MapsActivity.EXTRA_TRACK_ID, id))
+        }
     }
 }

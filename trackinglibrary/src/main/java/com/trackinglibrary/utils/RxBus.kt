@@ -1,4 +1,4 @@
-package com.trackinglibrary.Utils
+package com.trackinglibrary.utils
 
 import io.reactivex.Observable
 import io.reactivex.subjects.PublishSubject

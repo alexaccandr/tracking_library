@@ -1,4 +1,4 @@
-package com.trackinglibrary.Utils
+package com.trackinglibrary.utils
 
 import android.app.Notification
 import android.app.NotificationChannel
