@@ -5,9 +5,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.location.Location
-import android.location.LocationListener
 import android.location.LocationManager
-import android.os.Bundle
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Process
@@ -20,7 +18,7 @@ import com.trackinglibrary.utils.NotificationUtils
 import io.realm.Realm
 import java.util.concurrent.TimeUnit
 
-internal class TrackingService : Service(), LocationListener {
+internal class TrackingService : Service() {
 
     private val tag = TrackingService::class.java.simpleName
     private var mLocationManager: LocationManager? = null
@@ -48,6 +46,12 @@ internal class TrackingService : Service(), LocationListener {
 
         initLocationHandler()
         registerLocationListener()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        locationApi?.removeLocationUpdates(locationCallback)
+        settings?.unregisterListeners()
     }
 
     private fun initLocationHandler() {
@@ -83,40 +87,19 @@ internal class TrackingService : Service(), LocationListener {
         request.priority = LocationRequest.PRIORITY_HIGH_ACCURACY;
         request.interval = TimeUnit.SECONDS.toMillis(15)
         request.fastestInterval = TimeUnit.SECONDS.toMillis(10)
-//        request.smallestDisplacement = 10f
-        val locationCallback = object : LocationCallback() {
-            override fun onLocationResult(r: LocationResult?) {
-                super.onLocationResult(r)
-                if (r != null) {
-                    newLocation(r.lastLocation)
-                }
-            }
-        }
+        request.smallestDisplacement = 10f
+
         locationApi!!.requestLocationUpdates(request, locationCallback, looper)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mLocationManager?.removeUpdates(this)
-        settings?.unregisterListeners()
-    }
 
-    override fun onLocationChanged(location: Location?) {
-        if (location != null) {
-            newLocation(location)
+    private val locationCallback = object : LocationCallback() {
+        override fun onLocationResult(r: LocationResult?) {
+            super.onLocationResult(r)
+            if (r != null) {
+                newLocation(r.lastLocation)
+            }
         }
-    }
-
-    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-        // ignored
-    }
-
-    override fun onProviderEnabled(provider: String?) {
-        // ignored
-    }
-
-    override fun onProviderDisabled(provider: String?) {
-        // ignored
     }
 
     private fun newLocation(location: Location) {
