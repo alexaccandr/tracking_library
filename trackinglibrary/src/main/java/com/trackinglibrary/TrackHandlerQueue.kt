@@ -6,18 +6,19 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import com.kite.model.settings.TrackerSettings
-import com.trackinglibrary.utils.DatabaseUtils
-import com.trackinglibrary.utils.RxBus
-import com.trackinglibrary.utils.SpeedUtils
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.ModelAdapter
 import com.trackinglibrary.model.TrackAverageSpeed
 import com.trackinglibrary.model.TrackPoint
 import com.trackinglibrary.model.TrackStatus
+import com.trackinglibrary.utils.DatabaseUtils
+import com.trackinglibrary.utils.RxBus
+import com.trackinglibrary.utils.SpeedUtils
 import io.realm.Realm
 
-internal class TrackHandlerQueue constructor(val settings: TrackerSettings, looper: Looper) : Handler(looper) {
+internal class TrackHandlerQueue constructor(val settings: TrackerSettings, looper: Looper) :
+    Handler(looper) {
 
     val tag = TrackHandlerQueue::class.java.simpleName
 
@@ -91,12 +92,11 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
             }
             MSG_SAVE_FREQUENCY -> {
                 Log.d(tag, "msg: MSG_SAVE_FREQUENCY")
-                if (track != null) {
-                    val frequency = msg.obj as Long
+                val frequency = msg.obj as Long
+                Log.d(tag, "cave value=$frequency")
 
-                    // update frequency
-                    saveFrequency(frequency)
-                }
+                // update frequency
+                saveFrequency(frequency)
             }
             MSG_SAVE_AVERAGE_SPEED_DATA -> {
                 Log.d(tag, "msg: MSG_SAVE_AVERAGE_SPEED_DATA")
@@ -106,7 +106,8 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
                     // update average speed data
                     updateAverageSpeed(realm!!, track!!.id, data)
 
-                    val averageSpeed = SpeedUtils.calcAverageSpeed(track!!.totalTime, track!!.totalDistance)
+                    val averageSpeed =
+                        SpeedUtils.calcAverageSpeed(track!!.totalTime, track!!.totalDistance)
                     notifyAverageSpeedChanged(averageSpeed)
                 }
             }
@@ -134,7 +135,12 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
             "saveLocation: trackId=$trackId, location=(" + location.latitude + ", " + location.longitude + ", " + location.time + ")"
         )
         DatabaseUtils.executeTransaction(realm, Realm.Transaction {
-            TrackRecordDao(it).saveLocation(trackId, location.latitude, location.longitude, location.time)
+            TrackRecordDao(it).saveLocation(
+                trackId,
+                location.latitude,
+                location.longitude,
+                location.time
+            )
         })
     }
 
@@ -146,7 +152,10 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
     }
 
     private fun updateAverageSpeed(realm: Realm, trackId: String, data: Pair<Long, Double>) {
-        Log.d(tag, "updateAverageSpeed: trackId=$trackId, data=(" + data.first + ", " + data.second + ")")
+        Log.d(
+            tag,
+            "updateAverageSpeed: trackId=$trackId, data=(" + data.first + ", " + data.second + ")"
+        )
         val track = TrackRecordDao(realm).selectTrack(trackId)
 
         DatabaseUtils.executeTransaction(realm, Realm.Transaction {

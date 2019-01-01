@@ -5,21 +5,23 @@ import android.location.Location
 import android.os.HandlerThread
 import android.util.Log
 import com.kite.model.settings.TrackerSettings
-import com.trackinglibrary.utils.ContextUtils
-import com.trackinglibrary.utils.DatabaseUtils
-import com.trackinglibrary.utils.RxBus
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.*
 import com.trackinglibrary.services.TrackingService
+import com.trackinglibrary.utils.ContextUtils
+import com.trackinglibrary.utils.DatabaseUtils
+import com.trackinglibrary.utils.RxBus
 import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
 import io.realm.Realm
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 object TrackRecorder {
 
+    private val tag = TrackRecorder::class.java.simpleName
     private var initialized = false
     private var started = false
     private lateinit var handlerQueue: TrackHandlerQueue
@@ -85,7 +87,15 @@ object TrackRecorder {
     fun setFrequency(frequency: Long) {
         checkInitialized()
 
-        executeUpdateFrequency(frequency)
+        if (frequency in TimeUnit.MINUTES.toMillis(1)..TimeUnit.MINUTES.toMillis(60)) {
+            executeUpdateFrequency(frequency)
+        } else {
+            Log.e(tag, "frequency($frequency) ignored, frequency must be in range [1, 60]")
+        }
+    }
+
+    fun getFrequency(): Long {
+        return TrackerSettings(context).getFrequency()
     }
 
     fun getTracks(): Array<Track> {
@@ -106,8 +116,7 @@ object TrackRecorder {
     }
 
     fun registerAverageSpeedChangeListener(
-        scheduler: Scheduler,
-        listener: (TrackAverageSpeed) -> Unit
+        scheduler: Scheduler, listener: (TrackAverageSpeed) -> Unit
     ): Disposable {
         return RxBus.listen(TrackAverageSpeed::class.java).observeOn(scheduler).subscribe {
             listener(it)
@@ -115,10 +124,10 @@ object TrackRecorder {
     }
 
     fun registerTrackStatusChangeListener(
-        scheduler: Scheduler,
-        listener: (TrackStatus) -> Unit
+        scheduler: Scheduler, listener: (TrackStatus) -> Unit
     ): Disposable {
         return RxBus.listen(TrackStatus::class.java).observeOn(scheduler).subscribe {
+            Log.d(tag, "Listener called TrackStatus(${it.started})")
             listener(it)
         }
     }

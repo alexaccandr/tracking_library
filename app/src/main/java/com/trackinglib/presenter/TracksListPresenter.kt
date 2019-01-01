@@ -26,7 +26,9 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
         App.appComponent.inject(this)
     }
 
-    fun init() {
+    override fun onFirstViewAttach() {
+        super.onFirstViewAttach()
+
         disposables = CompositeDisposable()
         disposables!!.add(TrackRecorder.registerTrackStatusChangeListener(AndroidSchedulers.mainThread()) {
             if (it.started) {

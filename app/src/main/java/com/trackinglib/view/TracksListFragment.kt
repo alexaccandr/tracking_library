@@ -39,8 +39,6 @@ class TracksListFragment : MvpAppCompatFragment(), TracksListView {
             // use a linear layout manager
             layoutManager = viewManager
         }
-
-        presenter.init()
     }
 
     override fun updateTracksList(tracks: Array<TrackViewModel>) {

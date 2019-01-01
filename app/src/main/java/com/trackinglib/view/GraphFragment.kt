@@ -20,15 +20,13 @@ class GraphFragment : MvpAppCompatFragment(), GraphView {
     @InjectPresenter
     lateinit var presenter: GraphPresenter
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         return inflater.inflate(R.layout.fragment_graph, null)
     }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        presenter.init()
-    }
-
 
     override fun onTrackLoaded(tracks: Array<Track>) {
 
@@ -37,27 +35,29 @@ class GraphFragment : MvpAppCompatFragment(), GraphView {
             DataPoint(0.0, 0.0),
             *(tracks.mapIndexed { index, track ->
                 val avSpeed = if (track.averageSpeed.isNaN()) 0.0 else track.averageSpeed * 3.6
-                DataPoint((index + 2).toDouble(), avSpeed)
+                DataPoint((index + 1).toDouble(), avSpeed)
             }.toTypedArray())
         )
         val series = LineGraphSeries(dataPoints)
         series.isDrawBackground = true
-        series.setAnimated(true)
+
+        val showAnimation = !presenter.isInRestoreState(this)
+        series.setAnimated(showAnimation)
+
         series.isDrawDataPoints = true
 
-        graph.getViewport().setMinX(1.0)
-        graph.getViewport().setMaxX((tracks.size + 2).toDouble())
-        graph.getViewport().setMinY(0.0)
-        graph.getViewport().setMaxY(dataPoints.maxBy { it.y }!!.y * 1.2)
+        graph.viewport.setMinX(0.0)
+        graph.viewport.setMaxX((tracks.size + 1).toDouble())
+        graph.viewport.setMinY(0.0)
+        graph.viewport.setMaxY(dataPoints.maxBy { it.y }!!.y * 1.2)
 
-        graph.getViewport().setYAxisBoundsManual(true)
-        graph.getViewport().setXAxisBoundsManual(true)
+        graph.viewport.isYAxisBoundsManual = true
+        graph.viewport.isXAxisBoundsManual = true
 
-        graph.getGridLabelRenderer().setHorizontalAxisTitle("Номер трека")
-        graph.getGridLabelRenderer().setVerticalAxisTitle("Средняя сторость км/ч")
+        graph.gridLabelRenderer.horizontalAxisTitle = "Номер трека"
+        graph.gridLabelRenderer.verticalAxisTitle = "Средняя сторость км/ч"
 
         val staticLabelsFormatter = StaticLabelsFormatter(graph)
-//        val xAxis =
 
         val xAxisTitles = mutableListOf<String>()
         for (i in 0 until (tracks.size + 2)) {
@@ -68,12 +68,17 @@ class GraphFragment : MvpAppCompatFragment(), GraphView {
             }
         }
         staticLabelsFormatter.setHorizontalLabels(xAxisTitles.toTypedArray())
-        graph.getGridLabelRenderer().labelFormatter = staticLabelsFormatter
+        graph.gridLabelRenderer.labelFormatter = staticLabelsFormatter
 
         graph.addSeries(series)
 
 
         graph.legendRenderer.isVisible = true
         graph.legendRenderer.align = LegendRenderer.LegendAlign.TOP
+    }
+
+    override fun onDestroyView() {
+        graph.removeAllSeries()
+        super.onDestroyView()
     }
 }

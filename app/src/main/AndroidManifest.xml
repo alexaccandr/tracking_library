@@ -8,11 +8,13 @@
          location permissions for the 'MyLocation' functionality. 
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-<!--
-debug key
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" />
+    <!--
+    debug key
 
-AIzaSyAt6s3RuWBb3der3doP7umKG2Xl4ezG2m0
--->
+    AIzaSyAt6s3RuWBb3der3doP7umKG2Xl4ezG2m0
+    -->
     <application
         android:name=".App"
         android:allowBackup="true"
@@ -45,7 +47,7 @@ AIzaSyAt6s3RuWBb3der3doP7umKG2Xl4ezG2m0
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyAt6s3RuWBb3der3doP7umKG2Xl4ezG2m0"/>
+            android:value="AIzaSyAt6s3RuWBb3der3doP7umKG2Xl4ezG2m0" />
 
         <activity
             android:name=".view.MapsActivity"

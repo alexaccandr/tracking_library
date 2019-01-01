@@ -11,16 +11,17 @@ import android.os.Bundle
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Process
+import android.util.Log
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.TrackRecorder
-import com.trackinglibrary.utils.NotificationUtils
 import com.trackinglibrary.database.TrackRecordDao
+import com.trackinglibrary.utils.NotificationUtils
 import io.realm.Realm
 import java.util.concurrent.TimeUnit
 
-
 internal class TrackingService : Service(), LocationListener {
 
+    private val tag = TrackingService::class.java.simpleName
     private var mLocationManager: LocationManager? = null
     private var locationHandler: LocationHandler? = null
     private var settings: TrackerSettings? = null
@@ -32,8 +33,7 @@ internal class TrackingService : Service(), LocationListener {
     override fun onCreate() {
         super.onCreate()
 
-        mLocationManager =
-            applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        mLocationManager = applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (mLocationManager == null) {
             return
         }
@@ -54,10 +54,17 @@ internal class TrackingService : Service(), LocationListener {
         val lastLocTime = Realm.getDefaultInstance().use {
             TrackRecordDao(it).lastLocationTime()
         }
-        locationHandler = LocationHandler(saveLocationFrequency, lastLocTime) {
-            TrackRecorder.executeUpdateAverageSpeed(it)
-        }
+        locationHandler = LocationHandler(saveLocationFrequency, lastLocTime,
+            {
+                // save new interval time/distance
+                TrackRecorder.executeUpdateAverageSpeed(it)
+            }, {
+                // save interval location
+                TrackRecorder.saveLocation(it)
+            }
+        )
         s.registerFrequencyChangedListener {
+            Log.d(tag, "Save location frequency changes=" + TimeUnit.MILLISECONDS.toMinutes(it))
             locationHandler!!.saveFreqTime = it
         }
     }

@@ -1,22 +1,32 @@
 package com.trackinglib.view
 
+import android.graphics.Color
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper.getMainLooper
-import android.support.v4.app.Fragment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.arellomobile.mvp.MvpAppCompatFragment
+import com.arellomobile.mvp.presenter.InjectPresenter
+import com.jakewharton.rxbinding2.widget.RxSeekBar
 import com.trackinglib.R
+import com.trackinglib.presenter.StartTrackerPresenter
 import com.trackinglib.untils.ContextUtils
-import com.trackinglibrary.TrackRecorder
 import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
+import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.fragment_start_tracker.*
+import java.util.concurrent.TimeUnit
 
-class StartTrackerFragment : Fragment() {
 
-    var disposable: Disposable? = null
+class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
+
+    private val tagName = StartTrackerFragment::class.java.simpleName
+    private val disposables: CompositeDisposable = CompositeDisposable()
+
+    @InjectPresenter
+    lateinit var presenter: StartTrackerPresenter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,41 +39,54 @@ class StartTrackerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        disposable = TrackRecorder.registerTrackStatusChangeListener(AndroidSchedulers.mainThread()) {
-            Handler(getMainLooper()).post {
-                updateStatus(it.started)
-            }
-        }
-
-        updateStatus(TrackRecorder.hasStarted())
-
         startButton.setOnClickListener {
 
             val a = activity
             if (a != null) {
                 if (ContextUtils.hasLocationPermission(a)) {
                     startButton.isEnabled = false
-                    if (TrackRecorder.hasStarted()) {
-                        TrackRecorder.stop()
-                    } else {
-                        TrackRecorder.start()
-                    }
+                    presenter.switchTracker()
                 } else {
                     ContextUtils.askForLocationPermission(a)
                 }
             }
         }
+
+        val viewDisposable = RxSeekBar.changes(seekBar)
+            .debounce(100, TimeUnit.MILLISECONDS)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { str ->
+                    val freq: Long = (str * 0.59).toLong() + 1
+                    presenter.updateFrequency(freq)
+                }
+                , { err ->
+                    err.printStackTrace()
+                }
+            )
+        seekBar.progressDrawable.colorFilter = PorterDuffColorFilter(Color.BLUE, PorterDuff.Mode.MULTIPLY)
+        seekBar.thumb.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_IN)
+        disposables.add(viewDisposable)
     }
 
-    private fun updateStatus(started: Boolean) {
+    override fun updateFrequencyTitle(freq: Long) {
+        Log.d(tagName, "updateFrequencyTitle($freq)")
+        freqTextView.text = "$freq мин."
+    }
+
+    override fun updateSeekBar(value: Int) {
+        Log.d(tagName, "updateSeekBar($value)")
+        seekBar.progress = value
+    }
+
+    override fun updateStatus(started: Boolean) {
+        Log.d(tagName, "updateStatus($started)")
         startButton.text = if (started) "Stop tracker" else "Start tracker"
         startButton.isEnabled = true
     }
 
     override fun onDestroyView() {
-        if (disposable != null) {
-            disposable!!.dispose()
-        }
+        disposables.dispose()
         super.onDestroyView()
     }
 }

@@ -22,7 +22,7 @@ object GeoCoderApi {
                         block(it[0])
                     }
                 },
-                { er ->
+                { _ ->
                     // ignored
                 })
     }

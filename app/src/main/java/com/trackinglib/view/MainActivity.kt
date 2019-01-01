@@ -6,16 +6,11 @@ import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v7.app.AppCompatActivity
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import com.trackinglib.R
 import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
-
-    val locationRequestCode = 0x1111
 
     private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
 
@@ -24,20 +19,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         setSupportActionBar(toolbar)
-        // Create the adapter that will return a fragment for each of the three
-        // primary sections of the activity.
         mSectionsPagerAdapter = SectionsPagerAdapter(supportFragmentManager)
 
-        // Set up the ViewPager with the sections adapter.
+        container.offscreenPageLimit = 3
         container.adapter = mSectionsPagerAdapter
 
         container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
         tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
-
-//        fab.setOnClickListener { view ->
-//            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                .setAction("Action", null).show()
-//        }
     }
 
 
@@ -54,9 +42,8 @@ class MainActivity : AppCompatActivity() {
                 0 -> StartTrackerFragment()
                 1 -> TracksListFragment()
                 2 -> GraphFragment()
-                else -> PlaceholderFragment.newInstance(position + 1)
+                else -> throw Exception("no such position=$position")
             }
-//            return PlaceholderFragment.newInstance(position + 1)
         }
 
         override fun getCount(): Int {
@@ -64,42 +51,4 @@ class MainActivity : AppCompatActivity() {
             return 3
         }
     }
-
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    class PlaceholderFragment : Fragment() {
-
-        override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
-        ): View? {
-            val rootView = inflater.inflate(R.layout.fragment_main, container, false)
-//            rootView.section_label.text =
-//                getString(R.string.section_format, arguments?.getInt(ARG_SECTION_NUMBER))
-            return rootView
-        }
-
-        companion object {
-            /**
-             * The fragment argument representing the section number for this
-             * fragment.
-             */
-//            private val ARG_SECTION_NUMBER = "section_number"
-
-            /**
-             * Returns a new instance of this fragment for the given section
-             * number.
-             */
-            fun newInstance(sectionNumber: Int): PlaceholderFragment {
-                val fragment = PlaceholderFragment()
-//                val args = Bundle()
-//                args.putInt(ARG_SECTION_NUMBER, sectionNumber)
-//                fragment.arguments = args
-                return fragment
-            }
-        }
-    }
-
-
 }
