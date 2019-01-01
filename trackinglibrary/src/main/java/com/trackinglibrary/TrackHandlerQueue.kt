@@ -93,7 +93,7 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
             MSG_SAVE_FREQUENCY -> {
                 Log.d(tag, "msg: MSG_SAVE_FREQUENCY")
                 val frequency = msg.obj as Long
-                Log.d(tag, "cave value=$frequency")
+                Log.d(tag, "save value=$frequency")
 
                 // update frequency
                 saveFrequency(frequency)

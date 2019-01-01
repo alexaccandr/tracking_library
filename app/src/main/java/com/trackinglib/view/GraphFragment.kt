@@ -30,6 +30,7 @@ class GraphFragment : MvpAppCompatFragment(), GraphView {
 
     override fun onTrackLoaded(tracks: Array<Track>) {
 
+        graph.removeAllSeries()
         // first series is a line
         val dataPoints = arrayOf(
             DataPoint(0.0, 0.0),

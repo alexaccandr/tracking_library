@@ -12,6 +12,7 @@ import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Process
 import android.util.Log
+import com.google.android.gms.location.*
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.TrackRecorder
 import com.trackinglibrary.database.TrackRecordDao
@@ -25,6 +26,7 @@ internal class TrackingService : Service(), LocationListener {
     private var mLocationManager: LocationManager? = null
     private var locationHandler: LocationHandler? = null
     private var settings: TrackerSettings? = null
+    private var locationApi: FusedLocationProviderClient? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -71,17 +73,26 @@ internal class TrackingService : Service(), LocationListener {
 
     @SuppressLint("MissingPermission")
     private fun registerLocationListener() {
+
         val handler = HandlerThread("TrackerServiceHandler", Process.THREAD_PRIORITY_BACKGROUND)
         handler.start()
         val looper = handler.looper
 
-        mLocationManager?.requestLocationUpdates(
-            LocationManager.GPS_PROVIDER,
-            TimeUnit.SECONDS.toMillis(10),
-            0F,
-            this,
-            looper
-        )
+        locationApi = LocationServices.getFusedLocationProviderClient(this);
+        val request = LocationRequest.create();
+        request.priority = LocationRequest.PRIORITY_HIGH_ACCURACY;
+        request.interval = TimeUnit.SECONDS.toMillis(15)
+        request.fastestInterval = TimeUnit.SECONDS.toMillis(10)
+//        request.smallestDisplacement = 10f
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(r: LocationResult?) {
+                super.onLocationResult(r)
+                if (r != null) {
+                    newLocation(r.lastLocation)
+                }
+            }
+        }
+        locationApi!!.requestLocationUpdates(request, locationCallback, looper)
     }
 
     override fun onDestroy() {

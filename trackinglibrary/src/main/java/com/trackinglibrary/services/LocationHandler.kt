@@ -11,10 +11,17 @@ internal class LocationHandler(
     val locationListener: (location: Location) -> Unit
 ) {
 
+    private val tag = LocationHandler::class.java.simpleName
     // for calc average speed
     var lastLocation: Location? = null
 
     fun newLocation(location: Location) {
+
+        // validate location
+        if (location.hasAccuracy() && location.accuracy > 20f) {
+            Log.d(tag, "bad location accuracy(${location.accuracy})")
+            return
+        }
 
         // first location or frequency case
         if (lastSavedLocationTime == 0L || (location.time - lastSavedLocationTime) >= saveFreqTime) {
