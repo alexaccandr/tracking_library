@@ -32,6 +32,7 @@ internal class TrackingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(tag, "onCreate")
 
         mLocationManager = applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (mLocationManager == null) {
@@ -50,6 +51,7 @@ internal class TrackingService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(tag, "onDestroy")
         locationApi?.removeLocationUpdates(locationCallback)
         settings?.unregisterListeners()
     }
