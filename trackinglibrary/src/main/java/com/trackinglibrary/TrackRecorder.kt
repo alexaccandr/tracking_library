@@ -11,6 +11,7 @@ import com.trackinglibrary.model.*
 import com.trackinglibrary.services.TrackingService
 import com.trackinglibrary.utils.ContextUtils
 import com.trackinglibrary.utils.DatabaseUtils
+import com.trackinglibrary.utils.LocationUtils
 import com.trackinglibrary.utils.RxBus
 import io.reactivex.Scheduler
 import io.reactivex.disposables.Disposable
@@ -43,9 +44,13 @@ object TrackRecorder {
         if (shouldContinueRecording()) {
             continueRecording()
         }
+
+        // test suites
+        applyTestSuits()
     }
 
     @Synchronized
+    @JvmStatic
     fun start() {
         checkInitialized()
 
@@ -60,6 +65,7 @@ object TrackRecorder {
     }
 
     @Synchronized
+    @JvmStatic
     fun stop() {
         checkInitialized()
 
@@ -72,6 +78,7 @@ object TrackRecorder {
         started = false
     }
 
+    @JvmStatic
     fun hasStarted(): Boolean {
         checkInitialized()
 
@@ -84,6 +91,7 @@ object TrackRecorder {
         }
     }
 
+    @JvmStatic
     fun setFrequency(frequency: Long) {
         checkInitialized()
 
@@ -94,10 +102,12 @@ object TrackRecorder {
         }
     }
 
+    @JvmStatic
     fun getFrequency(): Long {
         return TrackerSettings(context).getFrequency()
     }
 
+    @JvmStatic
     fun getTracks(): Array<Track> {
         val realm = Realm.getDefaultInstance()
         realm.use {
@@ -106,6 +116,7 @@ object TrackRecorder {
         }
     }
 
+    @JvmStatic
     fun getTrack(id: String): Track {
         val realm = Realm.getDefaultInstance()
         realm.use {
@@ -115,6 +126,7 @@ object TrackRecorder {
         }
     }
 
+    @JvmStatic
     fun registerAverageSpeedChangeListener(
         scheduler: Scheduler, listener: (TrackAverageSpeed) -> Unit
     ): Disposable {
@@ -123,6 +135,7 @@ object TrackRecorder {
         }
     }
 
+    @JvmStatic
     fun registerTrackStatusChangeListener(
         scheduler: Scheduler, listener: (TrackStatus) -> Unit
     ): Disposable {
@@ -132,6 +145,7 @@ object TrackRecorder {
         }
     }
 
+    @JvmStatic
     fun registerTrackLocationChangeListener(
         scheduler: Scheduler,
         listener: (TrackPoint) -> Unit
@@ -189,4 +203,67 @@ object TrackRecorder {
     internal fun executeUpdateAverageSpeed(data: Pair<Long, Double>) {
         handlerQueue.putQueueUpdateAverageSpeed(data)
     }
+}
+
+private fun TrackRecorder.applyTestSuits() {
+
+    val trackCount = Realm.getDefaultInstance().use {
+        TrackRecordDao(it).hasTracks()
+    }
+
+    // already has records, skip suites
+    if (trackCount > 0) {
+        return
+    }
+
+    fun runTest(startTime: Long, latitude: Double, longitude: Double, stepPerMinute: Double) {
+        fun createLocation(lat: Double, lon: Double, time: Long): Location {
+            val location = Location("gps")
+            location.latitude = lat
+            location.longitude = lon
+            location.time = time
+            return location
+        }
+
+
+        val realm: Realm = Realm.getDefaultInstance()
+        val dao = TrackRecordDao(realm)
+        realm.executeTransaction {
+            val track = dao.createTrack(startTime)
+
+            var loc1: Location? = null
+            var loc2: Location? = null
+            for (i in 0..100) {
+                loc1 = if (loc1 == null) {
+                    createLocation(latitude, longitude, startTime)
+                } else {
+                    loc2
+                }
+                loc2 = createLocation(
+                    loc1!!.latitude + stepPerMinute,
+                    loc1.longitude,
+                    loc1.time + TimeUnit.MINUTES.toMillis(1)
+                )
+
+                TrackRecordDao(it).saveLocation(
+                    track.id,
+                    loc2.latitude,
+                    loc2.longitude,
+                    loc2.time
+                )
+                track.totalTime = track.totalTime + (loc2.time - loc1.time)
+                track.totalDistance = track.totalDistance + LocationUtils.calcDistance(loc1, loc2)
+            }
+            dao.stopTrack(track.id, loc2!!.time)
+        }
+    }
+
+    val startTime = Calendar.getInstance().timeInMillis - TimeUnit.DAYS.toMillis(3)
+    runTest(startTime, 45.045447, 38.978492, 0.01)
+
+    val startTime2 = Calendar.getInstance().timeInMillis - TimeUnit.DAYS.toMillis(2)
+    runTest(startTime2, 55.759203, 37.619121, 0.015)
+
+    val startTime3 = Calendar.getInstance().timeInMillis - TimeUnit.DAYS.toMillis(1)
+    runTest(startTime3, 59.937245, 30.331714, 0.012)
 }

@@ -18,7 +18,7 @@ object GeoCoderApi {
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread()).subscribe(
                 { it ->
-                    if (it != null && !it.isEmpty()) {
+                    if (it != null && it.isNotEmpty()) {
                         block(it[0])
                     }
                 },

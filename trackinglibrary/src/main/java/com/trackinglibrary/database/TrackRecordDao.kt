@@ -13,6 +13,8 @@ internal class TrackRecordDao(val realm: Realm) {
         return it != null
     }
 
+    fun hasTracks(): Long = realm.where(TrackRecord::class.java).count()
+
     fun createTrack(startTime: Long): TrackRecord {
         val idStr = UUID.randomUUID().toString()
         val item = TrackRecord(id = idStr, startDate = startTime)

@@ -41,4 +41,9 @@ object DatabaseUtils {
     }
 
     fun openDB(): Realm = Realm.getDefaultInstance()
+
+    @JvmStatic
+    fun getMyInt(): Int {
+        return 5
+    }
 }

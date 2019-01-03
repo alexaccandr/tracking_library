@@ -26,7 +26,7 @@ class LocationHandlerTest {
     fun `should call saveTimeAndDistance on new location`() {
 
         // given
-        val locationHandler = spy(LocationHandler(TimeUnit.MINUTES.toSeconds(10), 0, {}, {}))
+        val locationHandler = spy(LocationHandler(TimeUnit.MINUTES.toMillis(10), 0, {}, {}))
 
         val loc1 = createLocation(33.1, 44.1, 10f, 0L)
         val loc2 = createLocation(33.5, 44.5, 10f, TimeUnit.SECONDS.toMillis(10))
@@ -61,7 +61,7 @@ class LocationHandlerTest {
     fun `should skip bad location`() {
 
         // given
-        val locationHandler = spy(LocationHandler(TimeUnit.MINUTES.toSeconds(10), 0, {}, {}))
+        val locationHandler = spy(LocationHandler(TimeUnit.MINUTES.toMillis(10), 0, {}, {}))
         val badAccLocation = createBadAccuracyLocation()
 
         // when

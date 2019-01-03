@@ -84,9 +84,9 @@ internal class TrackingService : Service() {
         handler.start()
         val looper = handler.looper
 
-        locationApi = LocationServices.getFusedLocationProviderClient(this);
-        val request = LocationRequest.create();
-        request.priority = LocationRequest.PRIORITY_HIGH_ACCURACY;
+        locationApi = LocationServices.getFusedLocationProviderClient(this)
+        val request = LocationRequest.create()
+        request.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         request.interval = TimeUnit.SECONDS.toMillis(15)
         request.fastestInterval = TimeUnit.SECONDS.toMillis(10)
         request.smallestDisplacement = 10f

@@ -60,9 +60,7 @@ class TracksListPresenter : MvpPresenter<TracksListView>() {
 
     private fun updateLocation(id: String, lat: Double, lon: Double) {
         val d = GeoCoderApi.execute(geocoder, lat, lon) { address ->
-            if (address.locality != null) {
-                viewState.updateTrackLocation(id, GeocoderUtils.getAddressLine(address))
-            }
+            viewState.updateTrackLocation(id, GeocoderUtils.getAddressLine(address))
         }
         disposables!!.add(d)
     }

@@ -48,13 +48,16 @@ dependencies {
     })
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.2.0'
 
-//    testImplementation "org.powermock:powermock-module-junit4:1.7.0RC4"
-//    testImplementation "org.powermock:powermock-module-junit4-rule:1.6.5"
-//    testImplementation "org.powermock:powermock-api-mockito:1.6.5"
-//    testImplementation "org.powermock:powermock-classloading-xstream:1.6.5"
+    testImplementation "org.powermock:powermock-module-junit4:1.7.0RC4"
+    testImplementation "org.powermock:powermock-module-junit4-rule:2.0.0-RC.4"
+    testImplementation "org.powermock:powermock-api-mockito:1.7.4"
+    testImplementation "org.powermock:powermock-classloading-xstream:2.0.0-RC.4"
 
     testImplementation "org.robolectric:robolectric:3.8"
-    testImplementation 'org.robolectric:shadows-support-v4:3.0'
+    testImplementation 'org.robolectric:shadows-support-v4:3.3.2'
+
+    testImplementation "io.mockk:mockk:1.8.13"
+    androidTestImplementation "io.mockk:mockk-android:1.8.13"
 }
 repositories {
     mavenCentral()

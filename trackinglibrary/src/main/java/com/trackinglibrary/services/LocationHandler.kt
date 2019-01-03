@@ -20,6 +20,7 @@ internal class LocationHandler(
         if (saveFreqTime < TimeUnit.MINUTES.toMillis(1)) {
             throw IllegalArgumentException("saveFreqTime should not be < 1 minute")
         }
+
         if (lastSavedLocationTime < 0L) {
             throw IllegalArgumentException("lastSavedLocationTime($lastSavedLocationTime) should be positive")
         }
