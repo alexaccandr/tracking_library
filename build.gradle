@@ -14,6 +14,7 @@ buildscript {
     ext.play_services_maps_version = '16.0.0'
     ext.graphview_version = '4.2.2'
     ext.rx_binding_version = '2.2.0'
+    ext.tracking_library_version = '0.0.1'
 
     repositories {
         google()

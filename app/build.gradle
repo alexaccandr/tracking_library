@@ -40,7 +40,10 @@ dependencies {
     implementation "com.android.support.constraint:constraint-layout:$constraint_layout_version"
     implementation "com.android.support:design:$design_version"
     implementation "com.google.android.gms:play-services-maps:$play_services_maps_version"
-    implementation project(':trackinglibrary')
+
+    // library
+    implementation "com.github.alexaccandr:tracking_library:$tracking_library_version"
+
     // rx
     implementation "io.reactivex.rxjava2:rxandroid:$rx_android_version"
     implementation "io.reactivex.rxjava2:rxjava:$rx_java_version"
