@@ -29,6 +29,7 @@ object TrackRecorder {
     private lateinit var context: Application
 
     @Synchronized
+    @JvmStatic
     fun initialize(context: Application) {
         if (initialized) {
             Log.i("info", "Tracker already initialized")
