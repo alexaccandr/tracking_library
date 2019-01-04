@@ -20,13 +20,19 @@ object NotificationUtils {
 
         val icon1 = BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher)
 
-        val CHANNEL_ONE_ID = "channel_id_1"
-        val CHANNEL_ONE_NAME = "channel_id_name_1"
-        var notificationChannel: NotificationChannel? = null
+        var mBuilder: Notification.Builder = Notification.Builder(context)
+            .setContentTitle("Tracker")
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setLargeIcon(icon1)
+            .setOngoing(true)
+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+
+            val CHANNEL_ONE_ID = "channel_id_1"
+            val CHANNEL_ONE_NAME = "channel_id_name_1"
             val manager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
-            notificationChannel = manager.getNotificationChannel(CHANNEL_ONE_ID)
+            var notificationChannel = manager.getNotificationChannel(CHANNEL_ONE_ID)
             if (notificationChannel == null) {
                 notificationChannel = NotificationChannel(
                     CHANNEL_ONE_ID,
@@ -39,15 +45,9 @@ object NotificationUtils {
                 notificationChannel.lockscreenVisibility = Notification.VISIBILITY_PUBLIC
                 manager.createNotificationChannel(notificationChannel)
             }
-        }
-        var mBuilder: Notification.Builder = Notification.Builder(context)
-            .setContentTitle("Tracker")
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setLargeIcon(icon1)
-            .setOngoing(true)
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            mBuilder = mBuilder.setChannelId(CHANNEL_ONE_ID)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                mBuilder = mBuilder.setChannelId(CHANNEL_ONE_ID)
+            }
         }
 
         val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
