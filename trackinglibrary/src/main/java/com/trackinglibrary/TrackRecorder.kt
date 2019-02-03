@@ -30,7 +30,7 @@ object TrackRecorder {
 
     @Synchronized
     @JvmStatic
-    fun initialize(@NotNull context: Application) {
+    fun initialize2(@NotNull context: Application) {
         if (initialized) {
             Log.i("info", "Tracker already initialized")
             // already initialized

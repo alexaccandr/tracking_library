@@ -1,8 +1,25 @@
+apply plugin: 'com.novoda.bintray-release'
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'realm-android'
+
+publish {
+
+    def groupProjectID = 'com.trackinglibrary'
+    def artifactProjectID = 'tracking_library'
+    def publishVersionID = '0.0.3'
+
+    userOrg = 'alexaccandr'
+    repoName = 'TrackingLibrary2'
+    groupId = groupProjectID
+    artifactId = artifactProjectID
+    publishVersion = publishVersionID
+    desc = 'simple android tracking app'
+    website = 'https://github.com/alexaccandr/tracking_library'
+
+}
 
 android {
     compileSdkVersion 28
