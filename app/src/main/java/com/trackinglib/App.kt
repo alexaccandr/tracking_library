@@ -1,9 +1,9 @@
 package com.trackinglib
 
 import android.app.Application
-import com.kite.di.AppComponent
-import com.kite.di.AppModule
-import com.kite.di.DaggerAppComponent
+import com.trackinglib.di.AppComponent
+import com.trackinglib.di.AppModule
+import com.trackinglib.di.DaggerAppComponent
 import com.trackinglibrary.TrackRecorder
 
 class App : Application() {
@@ -16,7 +16,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         createApplicationComponent()
-        TrackRecorder.initialize(this)
+        TrackRecorder.initialize2(this)
     }
 
     private fun createApplicationComponent() {

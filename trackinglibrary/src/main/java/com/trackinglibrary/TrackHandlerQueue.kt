@@ -1,10 +1,13 @@
 package com.trackinglibrary
 
+import android.content.Context
+import android.content.SharedPreferences
 import android.location.Location
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
 import android.util.Log
+import com.google.android.gms.location.DetectedActivity
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
@@ -12,12 +15,20 @@ import com.trackinglibrary.model.ModelAdapter
 import com.trackinglibrary.model.TrackAverageSpeed
 import com.trackinglibrary.model.TrackPoint
 import com.trackinglibrary.model.TrackStatus
+import com.trackinglibrary.prefs.BaseSettings
+import com.trackinglibrary.prefs.RealTimeSettings
+import com.trackinglibrary.prefs.SettingsController
+import com.trackinglibrary.prefs.SettingsControllerListener
+import com.trackinglibrary.services.NewMessageNotification
+import com.trackinglibrary.utils.BluetoothUtils
 import com.trackinglibrary.utils.DatabaseUtils
 import com.trackinglibrary.utils.RxBus
 import com.trackinglibrary.utils.SpeedUtils
 import io.realm.Realm
+import java.util.concurrent.TimeUnit
 
-internal class TrackHandlerQueue constructor(val settings: TrackerSettings, looper: Looper) :
+
+internal class TrackHandlerQueue constructor(val context: Context, val settings: TrackerSettings, looper: Looper) :
     Handler(looper) {
 
     val tag = TrackHandlerQueue::class.java.simpleName
@@ -25,13 +36,25 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
     private companion object {
         const val MSG_START_TRACK = 0
         const val MSG_STOP_TRACK = 1
+        const val MSG_START_RECOGNITION = 5
+        const val MSG_STOP_RECOGNITION = 6
         const val MSG_SAVE_LOCATION = 2
         const val MSG_SAVE_FREQUENCY = 3
         const val MSG_SAVE_AVERAGE_SPEED_DATA = 4
+        const val MSG_PENDING_STOP = 7
+        const val MSG_PENDING_STOP_FAST = 8
+        const val MSG_PENDING_START = 9
+        const val MSG_NEW_RECOGNITION_EVENT = 10
     }
 
     private var realm: Realm? = null
     private var track: TrackRecord? = null
+
+    private var settingsController: SettingsController? = null
+    private var isRecordingTrack = false
+    private var isPendingToStart = false
+    private var isPendingToStop = false
+    private var isPendingToStopFast = false
 
     init {
         post {
@@ -39,6 +62,9 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
             track = TrackRecordDao(realm!!).lastTrack()
             if (track == null) {
                 DatabaseUtils.close(realm)
+            }
+            if (TrackRecorder.hasStartedRecognition()) {
+                registerRttController()
             }
         }
     }
@@ -79,6 +105,23 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
                     track = null
                 }
             }
+            MSG_START_RECOGNITION -> {
+                registerRttController()
+                settings.executeTransaction {
+                    settings.setRecognitionStarted(true)
+                }
+            }
+            MSG_STOP_RECOGNITION -> {
+                val settings = TrackerSettings(context)
+                settings.executeTransaction {
+                    settings.setRecognitionStarted(false)
+                }
+                unregisterSettingsController()
+
+                // clear all flags
+                isRecordingTrack = false
+                updateRecognitionFlags()
+            }
             MSG_SAVE_LOCATION -> {
                 Log.d(tag, "msg: MSG_SAVE_LOCATION")
                 if (track != null) {
@@ -111,7 +154,86 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
                     notifyAverageSpeedChanged(averageSpeed)
                 }
             }
+            MSG_PENDING_START -> {
+                isRecordingTrack = true
+                NewMessageNotification.createNotification(context, "START DRIVING!!!!!!", "START DRIVING!!!!!!")
+            }
+            MSG_NEW_RECOGNITION_EVENT -> {
+                val realTimeSettings = RealTimeSettings(context)
+                if (settings.isRecognitionStarted()) {
+                    val lastStillConf = realTimeSettings.getLastStillConf()
+                    val lastInVehicleConf = realTimeSettings.getLastInVehicleConf()
+
+                    val drivingCase = realTimeSettings.getLastTransition() == DetectedActivity.IN_VEHICLE
+                            && lastInVehicleConf > 90 && lastStillConf < 3
+
+                    if (isRecordingTrack) {
+                        // TODO
+//                    if (!inVehicleCase) {
+//
+//                        // pending to stop
+//                        when {
+//                            !isPendingToStop -> {
+//                                putQueuePending(putStop = true)
+//                                updateRecognitionFlags(pStop = true)
+//                            }
+//                            !isPendingToStopFast -> {
+//
+//                            }
+//                        }
+//                    }
+                    } else {
+
+                        if (drivingCase) {
+                            if (isPendingToStart) {
+                                // ignore
+                            } else {
+                                putQueuePending(putStart = true)
+                                updateRecognitionFlags(pendingStart = true)
+                            }
+                        } else {
+                            putQueuePending()
+                            updateRecognitionFlags()
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private fun registerRttController() {
+        val rttSettings = RealTimeSettings(context)
+        if (settingsController == null) {
+            settingsController = SettingsController(
+                context, listener, rttSettings.preferences,
+                BaseSettings.SETTING_LAST_TRANSITION,
+                BaseSettings.SETTING_LAST_IN_VEHICLE_CONF,
+                BaseSettings.SETTING_LAST_STILL_CONF
+            )
+        }
+    }
+
+    private fun unregisterSettingsController() {
+        if (settingsController != null) {
+            settingsController!!.unregisterListeners()
+            settingsController = null
+        }
+    }
+
+    private val listener = object : SettingsControllerListener {
+        override fun onChange(context: Context, sharedPreferences: SharedPreferences, key: String) {
+            putQueueNewRecognitionEvent()
+        }
+    }
+
+    private fun updateRecognitionFlags(
+        pendingStop: Boolean = false,
+        pendingStopFast: Boolean = false,
+        pendingStart: Boolean = false
+    ) {
+        isPendingToStop = pendingStop
+        isPendingToStopFast = pendingStopFast
+        isRecordingTrack = pendingStart
     }
 
     private fun createTrack(startTime: Long) {
@@ -193,6 +315,18 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
         sendMessage(message)
     }
 
+    internal fun putQueueStartRecognition() {
+        val message = Message()
+        message.what = TrackHandlerQueue.MSG_START_RECOGNITION
+        sendMessage(message)
+    }
+
+    internal fun putQueueStopRecognition() {
+        val message = Message()
+        message.what = TrackHandlerQueue.MSG_STOP_RECOGNITION
+        sendMessage(message)
+    }
+
     internal fun putQueueSaveLocation(location: Location) {
         val message = Message()
         message.what = TrackHandlerQueue.MSG_SAVE_LOCATION
@@ -212,5 +346,34 @@ internal class TrackHandlerQueue constructor(val settings: TrackerSettings, loop
         message.what = TrackHandlerQueue.MSG_SAVE_AVERAGE_SPEED_DATA
         message.obj = data
         sendMessage(message)
+    }
+
+    fun putQueueNewRecognitionEvent() {
+        sendEmptyMessage(MSG_NEW_RECOGNITION_EVENT)
+    }
+
+
+    private fun putQueuePending(
+        putStart: Boolean = false,
+        putStop: Boolean = false,
+        putStopFast: Boolean = false
+    ) {
+        if (putStart) {
+            val bluetoothCase = BluetoothUtils.enableBluetooth()
+            val waitingSecs = if (bluetoothCase) 20L else 10L
+            sendEmptyMessageDelayed(MSG_PENDING_START, TimeUnit.SECONDS.toMillis(waitingSecs))
+        } else {
+            removeMessages(MSG_PENDING_START)
+        }
+        if (putStop) {
+            sendEmptyMessageDelayed(MSG_PENDING_STOP, TimeUnit.SECONDS.toMillis(30))
+        } else {
+            removeMessages(MSG_PENDING_STOP)
+        }
+        if (putStopFast) {
+            sendEmptyMessageDelayed(MSG_PENDING_STOP_FAST, TimeUnit.SECONDS.toMillis(120))
+        } else {
+            removeMessages(MSG_PENDING_STOP_FAST)
+        }
     }
 }

@@ -11,11 +11,16 @@ import android.os.IBinder
 import android.os.Process
 import android.util.Log
 import com.google.android.gms.location.*
+import com.google.gson.Gson
 import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.TrackRecorder
+import com.trackinglibrary.database.LogItem
 import com.trackinglibrary.database.TrackRecordDao
+import com.trackinglibrary.prefs.MyLocaation
+import com.trackinglibrary.prefs.RealTimeSettings
 import com.trackinglibrary.utils.NotificationUtils
 import io.realm.Realm
+import java.util.*
 import java.util.concurrent.TimeUnit
 
 internal class TrackingService : Service() {
@@ -33,7 +38,6 @@ internal class TrackingService : Service() {
     override fun onCreate() {
         super.onCreate()
         Log.d(tag, "onCreate")
-
         mLocationManager = applicationContext.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         if (mLocationManager == null) {
             return
@@ -41,8 +45,14 @@ internal class TrackingService : Service() {
         settings = TrackerSettings(this)
 
         startForeground(
-            NotificationUtils.FOREGROUND_SERVICE_ID,
-            NotificationUtils.createOrUpdateTrackerNotification(this)
+            NotificationUtils.FOREGROUND_TRACKER_SERVICE_ID,
+            NotificationUtils.createOrUpdateTrackerNotification(
+                this,
+                NotificationUtils.FOREGROUND_TRACKER_SERVICE_ID,
+                "channelTracker",
+                "channelNameTracker",
+                "Recording Tracker"
+            )
         )
 
         initLocationHandler()
@@ -52,6 +62,7 @@ internal class TrackingService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(tag, "onDestroy")
+
         locationApi?.removeLocationUpdates(locationCallback)
         settings?.unregisterListeners()
     }
@@ -87,9 +98,9 @@ internal class TrackingService : Service() {
         locationApi = LocationServices.getFusedLocationProviderClient(this)
         val request = LocationRequest.create()
         request.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        request.interval = TimeUnit.SECONDS.toMillis(15)
-        request.fastestInterval = TimeUnit.SECONDS.toMillis(10)
-        request.smallestDisplacement = 10f
+        request.interval = TimeUnit.SECONDS.toMillis(1)
+        request.fastestInterval = TimeUnit.SECONDS.toMillis(1)
+        request.smallestDisplacement = 0f
 
         locationApi!!.requestLocationUpdates(request, locationCallback, looper)
     }
@@ -100,6 +111,46 @@ internal class TrackingService : Service() {
             super.onLocationResult(r)
             if (r != null) {
                 newLocation(r.lastLocation)
+                val location = r.lastLocation
+
+                fun saveToSettings(l: Location) {
+                    val settings = RealTimeSettings(this@TrackingService)
+                    settings.executeTransaction {
+                        val myLoc = MyLocaation(l.bearing, l.speed, l.accuracy)
+                        val locationSerialized = Gson().toJson(myLoc)
+                        settings.setLocationV2(locationSerialized)
+                    }
+                }
+
+                fun saveToDatabase(l: Location) {
+
+                    fun mps_to_kmph(mps: Float): Float {
+                        return (3.6f * mps);
+                    }
+
+                    if (l.hasSpeed()) {
+                        Realm.getDefaultInstance().use {
+                            it.executeTransaction{
+                                val logItem = LogItem(
+                                    Calendar.getInstance().timeInMillis,
+                                    LogItem.Companion.Type.TYPE_SPEED.typeId,
+                                    String.format(Locale.US, "%.3f", mps_to_kmph(l.speed))
+                                )
+                                it.insert(logItem)
+                            }
+                        }
+                    }
+                }
+
+                if (location.hasAccuracy()) {
+                    if (location.accuracy < 60) {
+                        saveToSettings(location)
+                        saveToDatabase(location)
+                    }
+                } else {
+                    saveToSettings(location)
+                    saveToDatabase(location)
+                }
             }
         }
     }

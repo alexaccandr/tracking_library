@@ -13,6 +13,9 @@ interface StartTrackerView : MvpView {
     @StateStrategyType(value = SkipStrategy::class, tag = "seek")
     fun updateSeekBar(value: Int)
 
-    @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "status")
-    fun updateStatus(started: Boolean)
+    @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "trackerStatus")
+    fun updateTrackerStatus(started: Boolean)
+
+    @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "recognitionStatus")
+    fun updateRecognitionStatus(started: Boolean)
 }

@@ -7,6 +7,7 @@ import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v7.app.AppCompatActivity
 import com.trackinglib.R
+import com.trackinglib.untils.ContextUtils
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -18,7 +19,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        setSupportActionBar(toolbar)
         mSectionsPagerAdapter = SectionsPagerAdapter(supportFragmentManager)
 
         container.offscreenPageLimit = 3
@@ -26,6 +26,9 @@ class MainActivity : AppCompatActivity() {
 
         container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
         tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
+
+        ContextUtils.askForLocationPermission(this)
+//        ContextUtils.askForStoragePermission(this)
     }
 
 
@@ -40,8 +43,8 @@ class MainActivity : AppCompatActivity() {
             // Return a PlaceholderFragment (defined as a static inner class below).
             return when (position) {
                 0 -> StartTrackerFragment()
-                1 -> TracksListFragment()
-                2 -> GraphFragment()
+                1 -> RecognitionFragment()
+                2 -> TracksListFragment()
                 else -> throw Exception("no such position=$position")
             }
         }
@@ -49,5 +52,11 @@ class MainActivity : AppCompatActivity() {
         override fun getCount(): Int {
             return 3
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        ContextUtils.askForLocationPermission(this)
+        ContextUtils.askForStoragePermission(this)
     }
 }

@@ -52,6 +52,15 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
             }
         }
 
+        startRecognitionButton.setOnClickListener {
+
+            val a = activity
+            if (a != null) {
+                startRecognitionButton.isEnabled = false
+                presenter.switchRecognition()
+            }
+        }
+
         val viewDisposable = RxSeekBar.changes(seekBar)
             .debounce(100, TimeUnit.MILLISECONDS)
             .observeOn(AndroidSchedulers.mainThread())
@@ -79,10 +88,16 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
         seekBar.progress = value
     }
 
-    override fun updateStatus(started: Boolean) {
+    override fun updateTrackerStatus(started: Boolean) {
         Log.d(tagName, "updateStatus($started)")
         startButton.text = if (started) "Stop tracker" else "Start tracker"
         startButton.isEnabled = true
+    }
+
+    override fun updateRecognitionStatus(started: Boolean) {
+        Log.d(tagName, "updateStatus($started)")
+        startRecognitionButton.text = if (started) "Stop recognition" else "Start recognition"
+        startRecognitionButton.isEnabled = true
     }
 
     override fun onDestroyView() {

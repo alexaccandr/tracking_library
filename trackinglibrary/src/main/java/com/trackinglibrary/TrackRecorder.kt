@@ -8,6 +8,7 @@ import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.*
+import com.trackinglibrary.services.TrackAutoRecorderService
 import com.trackinglibrary.services.TrackingService
 import com.trackinglibrary.utils.ContextUtils
 import com.trackinglibrary.utils.DatabaseUtils
@@ -24,7 +25,8 @@ object TrackRecorder {
 
     private val tag = TrackRecorder::class.java.simpleName
     private var initialized = false
-    private var started = false
+    private var startedTracker = false
+    private var startedActivityRecognition = false
     private lateinit var handlerQueue: TrackHandlerQueue
     private lateinit var context: Application
 
@@ -43,7 +45,10 @@ object TrackRecorder {
         DatabaseUtils.initDatabase(context)
         startQueue()
         if (shouldContinueRecording()) {
-            continueRecording()
+            continueRecordingTrack()
+        }
+        if (shouldContinueRecordingRecognition()) {
+            continueRecordingRecognition()
         }
     }
 
@@ -52,14 +57,14 @@ object TrackRecorder {
     fun start() {
         checkInitialized()
 
-        if (started) {
+        if (startedTracker) {
             return
         }
 
         val startTime = Calendar.getInstance().timeInMillis
         executeStartTrack(startTime)
         startGpsService()
-        started = true
+        startedTracker = true
     }
 
     @Synchronized
@@ -67,13 +72,41 @@ object TrackRecorder {
     fun stop() {
         checkInitialized()
 
-        if (!started) {
+        if (!startedTracker) {
             return
         }
 
         stopGpsService()
         executeStopTrack(Calendar.getInstance().timeInMillis)
-        started = false
+        startedTracker = false
+    }
+
+    @Synchronized
+    @JvmStatic
+    fun startRecognition() {
+        checkInitialized()
+
+        if (startedActivityRecognition) {
+            return
+        }
+
+        executeStartRecognition()
+        startRecognitionService()
+        startedActivityRecognition = true
+    }
+
+    @Synchronized
+    @JvmStatic
+    fun stopRecognition() {
+        checkInitialized()
+
+        if (!startedActivityRecognition) {
+            return
+        }
+
+        stopRecognitionService()
+        executeStopRecognition()
+        startedActivityRecognition = false
     }
 
     @JvmStatic
@@ -83,11 +116,20 @@ object TrackRecorder {
         return hasStarted0()
     }
 
+    @JvmStatic
+    fun hasStartedRecognition(): Boolean {
+        checkInitialized()
+
+        return hasStartedRecognition0()
+    }
+
     private fun hasStarted0(): Boolean {
         Realm.getDefaultInstance().use {
             return TrackRecordDao(it).hasStartedTrack()
         }
     }
+
+    private fun hasStartedRecognition0(): Boolean = TrackerSettings(context).isRecognitionStarted()
 
     @JvmStatic
     fun setFrequency(@NotNull frequency: Long) {
@@ -160,7 +202,7 @@ object TrackRecorder {
         handlerThread.start()
         val looper = handlerThread.looper
         val settings = TrackerSettings(context)
-        handlerQueue = TrackHandlerQueue(settings, looper)
+        handlerQueue = TrackHandlerQueue(context, settings, looper)
     }
 
     private fun checkInitialized() {
@@ -169,12 +211,19 @@ object TrackRecorder {
         }
     }
 
-    private fun continueRecording() {
-        started = true
+    private fun continueRecordingTrack() {
+        startedTracker = true
         startGpsService()
     }
 
+    private fun continueRecordingRecognition() {
+        startedActivityRecognition = true
+        startRecognitionService()
+    }
+
     private fun shouldContinueRecording(): Boolean = hasStarted0()
+
+    private fun shouldContinueRecordingRecognition(): Boolean = hasStartedRecognition0()
 
     private fun startGpsService() {
         ContextUtils.startService(context, TrackingService::class.java)
@@ -184,12 +233,28 @@ object TrackRecorder {
         ContextUtils.stopService(context, TrackingService::class.java)
     }
 
+    private fun startRecognitionService() {
+        ContextUtils.startService(context, TrackAutoRecorderService::class.java)
+    }
+
+    private fun stopRecognitionService() {
+        ContextUtils.stopService(context, TrackAutoRecorderService::class.java)
+    }
+
     internal fun executeStartTrack(startTime: Long) {
         handlerQueue.putQueueStartTrack(startTime)
     }
 
     internal fun executeStopTrack(stopTime: Long) {
         handlerQueue.putQueueStopTrack(stopTime)
+    }
+
+    internal fun executeStartRecognition() {
+        handlerQueue.putQueueStartRecognition()
+    }
+
+    internal fun executeStopRecognition() {
+        handlerQueue.putQueueStopRecognition()
     }
 
     internal fun saveLocation(location: Location) {

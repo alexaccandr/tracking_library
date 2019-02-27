@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TrackingLib</string>
+    <string name="app_name">RaxelRecognitionLib</string>
     <string name="title_activity_main">TrackingLib</string>
     <string name="tab_text_1">Start</string>
     <string name="tab_text_2">Tracks list</string>

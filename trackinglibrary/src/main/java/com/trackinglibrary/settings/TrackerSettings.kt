@@ -6,8 +6,9 @@ import java.util.concurrent.TimeUnit
 
 class TrackerSettings(context: Context) : BaseSettings(context, "common_settings") {
 
-    private companion object {
+    companion object {
         const val KEY_FREQUENCY = "key_frequency"
+        const val KEY_RECOGNITION_STARTED = "key_recognition_started"
     }
 
     private val listeners = mutableListOf<SharedPreferences.OnSharedPreferenceChangeListener>()
@@ -34,5 +35,13 @@ class TrackerSettings(context: Context) : BaseSettings(context, "common_settings
         listeners.forEach {
             preferences.unregisterOnSharedPreferenceChangeListener(it)
         }
+    }
+
+    fun isRecognitionStarted(): Boolean {
+        return preferences.getBoolean(KEY_RECOGNITION_STARTED, false)
+    }
+
+    fun setRecognitionStarted(value: Boolean) {
+        set(KEY_RECOGNITION_STARTED, value)
     }
 }
