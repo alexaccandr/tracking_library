@@ -6,6 +6,6 @@ import com.trackinglibrary.model.Track
 object ViewModelAdapter {
 
     fun adaptTrack(track: Track): TrackViewModel {
-        return TrackViewModel(track.id, track.startDate, null)
+        return TrackViewModel(track.id, track.startDate, track.finishDate)
     }
 }

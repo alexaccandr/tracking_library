@@ -1,13 +1,19 @@
 package com.trackinglib.view
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.support.design.widget.TabLayout
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import com.trackinglib.R
 import com.trackinglib.untils.ContextUtils
+import com.trackinglibrary.services.NewMessageNotification
 import kotlinx.android.synthetic.main.activity_main.*
 
 
@@ -15,13 +21,14 @@ class MainActivity : AppCompatActivity() {
 
     private var mSectionsPagerAdapter: SectionsPagerAdapter? = null
 
+    lateinit var receiver: BroadcastReceiver
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         mSectionsPagerAdapter = SectionsPagerAdapter(supportFragmentManager)
 
-        container.offscreenPageLimit = 3
+        container.offscreenPageLimit = 4
         container.adapter = mSectionsPagerAdapter
 
         container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
@@ -29,6 +36,15 @@ class MainActivity : AppCompatActivity() {
 
         ContextUtils.askForLocationPermission(this)
 //        ContextUtils.askForStoragePermission(this)
+
+        val filter = IntentFilter("SUPER_ACTION")
+        receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.e("SUPER!!!!", "AAAA")
+            }
+        }
+        registerReceiver(receiver, filter)
+        NewMessageNotification.createNotification(this, "aaa", "sss")
     }
 
 
@@ -45,12 +61,13 @@ class MainActivity : AppCompatActivity() {
                 0 -> StartTrackerFragment()
                 1 -> RecognitionFragment()
                 2 -> TracksListFragment()
+                3 -> MapFragment()
                 else -> throw Exception("no such position=$position")
             }
         }
 
         override fun getCount(): Int {
-            return 3
+            return 4
         }
     }
 

@@ -21,14 +21,21 @@ object NewMessageNotification {
      */
     fun createNotification(mContext: Context, title: String, message: String) {
 
-        var mNotificationManager: NotificationManager? = null
-        var mBuilder: NotificationCompat.Builder? = null
+        val mNotificationManager: NotificationManager?
+        val mBuilder: NotificationCompat.Builder?
 
         /**Creates an explicit intent for an Activity in your app */
-        val resultIntent = Intent()
-        resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//        val resultIntent = Intent()
+//        resultIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//
+//        val resultPendingIntent = PendingIntent.getActivity(
+//            mContext,
+//            0 /* Request code */, resultIntent,
+//            PendingIntent.FLAG_UPDATE_CURRENT
+//        )
+        val resultIntent = Intent("SUPER_ACTION")
 
-        val resultPendingIntent = PendingIntent.getActivity(
+        val resultPendingIntent = PendingIntent.getBroadcast(
             mContext,
             0 /* Request code */, resultIntent,
             PendingIntent.FLAG_UPDATE_CURRENT

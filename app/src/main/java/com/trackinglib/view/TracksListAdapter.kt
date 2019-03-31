@@ -3,6 +3,8 @@ package com.trackinglib.view
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import com.trackinglib.R
 import com.trackinglib.viewmodel.TrackViewModel
@@ -18,7 +20,7 @@ class TracksListAdapter(private val items: MutableList<TrackViewModel>, val bloc
 
     class MyViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         val titleDate = view.startDateView
-        val titleLocation = view.locationView
+        val titleDateEnd = view.endDateView
         val number = view.numberView
     }
 
@@ -33,7 +35,11 @@ class TracksListAdapter(private val items: MutableList<TrackViewModel>, val bloc
         val it = items[position]
         val date = Date(it.date)
         holder.titleDate.text = format.format(date)
-        holder.titleLocation.text = it.location
+        if (it.endDate != null) {
+            val dateEnd = Date(it.endDate)
+            holder.titleDateEnd.text = format.format(dateEnd)
+            holder.titleDateEnd.visibility = VISIBLE
+        }
         holder.number.text = "#${items.size - (position)}"
         holder.view.setOnClickListener {
             block(items[position].id)
@@ -47,7 +53,12 @@ class TracksListAdapter(private val items: MutableList<TrackViewModel>, val bloc
     }
 
     fun updateTrackLocation(id: String, location: String) {
-        items.firstOrNull { it.id == id }?.location = location
+//        if (it.endDate != null) {
+//            val dateEnd = Date(it.endDate)
+//            holder.titleDateEnd.text = format.format(dateEnd)
+//            holder.titleDateEnd.visibility = GONE
+//        }
+//        items.firstOrNull { it.id == id }?.location = location
         notifyDataSetChanged()
     }
 }

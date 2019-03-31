@@ -10,7 +10,7 @@ import com.google.android.gms.location.ActivityTransition
 import com.google.android.gms.location.ActivityTransitionRequest
 import com.google.android.gms.location.DetectedActivity
 import com.google.android.gms.tasks.Task
-import com.kite.model.settings.TrackerSettings
+import com.trackinglibrary.settings.TrackerSettings
 import com.trackinglibrary.utils.NotificationUtils
 
 internal class TrackAutoRecorderService : Service() {

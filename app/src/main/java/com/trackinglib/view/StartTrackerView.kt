@@ -18,4 +18,13 @@ interface StartTrackerView : MvpView {
 
     @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "recognitionStatus")
     fun updateRecognitionStatus(started: Boolean)
+
+    @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "geofenceStatus")
+    fun updateGeofence(value: String)
+
+    @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "geofencePathsenseStatus")
+    fun updateGeofencePathsense(value: String)
+
+    @StateStrategyType(value = AddToEndSingleStrategy::class, tag = "stillRegistered")
+    fun updateStillRegistered(value: Boolean)
 }

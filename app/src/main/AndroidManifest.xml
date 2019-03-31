@@ -13,6 +13,12 @@
     <uses-feature android:name="android.hardware.location.gps"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
 
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
     <application
             android:name=".App"
             android:allowBackup="true"
@@ -21,6 +27,16 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/AppTheme">
+
+        <provider
+                android:name="android.support.v4.content.FileProvider"
+                android:authorities="com.activity_recognition_test.provider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/provider_paths"/>
+        </provider>
 
         <activity
                 android:name=".view.MainActivity"
@@ -45,7 +61,7 @@
 
         <meta-data
                 android:name="com.google.android.geo.API_KEY"
-                android:value="AIzaSyAt6s3RuWBb3der3doP7umKG2Xl4ezG2m0"/>
+                android:value="AIzaSyAfoCEB2rd6sU1KRAIHqIsyPW17Zij7N00"/>
 
         <meta-data
                 android:name="io.fabric.ApiKey"

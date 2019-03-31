@@ -1,10 +1,12 @@
 package com.trackinglib.view
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Vibrator
 import android.support.v4.app.Fragment
+import android.support.v4.content.FileProvider
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,10 +18,12 @@ import com.trackinglib.R
 import com.trackinglib.untils.LogUtils
 import com.trackinglibrary.database.LogItem
 import com.trackinglibrary.prefs.*
+import com.trackinglibrary.utils.S3Publisher
 import io.realm.Realm
 import kotlinx.android.synthetic.main.fragment_recognition.*
 import kotlinx.android.synthetic.main.list_item_recognitio.view.*
 import net.ozaydin.serkan.easy_csv.EasyCsv
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.concurrent.thread
@@ -45,6 +49,10 @@ class RecognitionFragment : Fragment(), SettingsControllerListener {
             saveLogsToFile()
         }
 
+        sendToS3.setOnClickListener {
+            sendLogsToS3()
+        }
+
         clearData.setOnClickListener {
             clearCollectedData()
         }
@@ -66,6 +74,33 @@ class RecognitionFragment : Fragment(), SettingsControllerListener {
             )
 
         updateLastRecognitionActivity()
+    }
+
+    private fun sendLogsToS3() {
+        thread(start = true) {
+            try {
+                S3Publisher.publish(
+                    File(LogUtils.getExtCacheDir(), "logs.csv"),
+                    "csv",
+                    "recognition",
+                    "device name",
+                    "app version"
+                )
+                val a = activity
+                if (a != null) {
+                    a.runOnUiThread {
+                        Toast.makeText(a, "File sent successfully", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Throwable) {
+                val a = activity
+                if (a != null) {
+                    a.runOnUiThread {
+                        Toast.makeText(a, "File not sent", Toast.LENGTH_LONG).show()
+                    }
+                }
+            }
+        }
     }
 
     private fun clearCollectedData() {
@@ -100,6 +135,28 @@ class RecognitionFragment : Fragment(), SettingsControllerListener {
 
                     val easyCsv = EasyCsv(activity)
                     LogUtils.writeRecognitionLogs(easyCsv, result)
+
+                    val intentShareFile = Intent(Intent.ACTION_SEND)
+                    val fileWithinMyDir = File(LogUtils.getExtCacheDir(), "logs.csv")
+
+                    if (fileWithinMyDir.exists()) {
+                        intentShareFile.type = "application/csv"
+
+                        val uri = FileProvider.getUriForFile(
+                            context!!,
+                            context!!.applicationContext.packageName + ".provider",
+                            fileWithinMyDir
+                        );
+                        intentShareFile.putExtra(Intent.EXTRA_STREAM, uri)
+
+                        intentShareFile.putExtra(
+                            Intent.EXTRA_SUBJECT,
+                            "Sharing File..."
+                        )
+                        intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...")
+
+                        startActivity(Intent.createChooser(intentShareFile, "Share File"))
+                    }
                 }
             } catch (e: Throwable) {
                 e.printStackTrace()
@@ -120,7 +177,7 @@ class RecognitionFragment : Fragment(), SettingsControllerListener {
             try {
                 updateWithKey(key)
             } catch (e: Throwable) {
-                Toast.makeText(context, "Somethong wrong with: $key", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Something went wrong with: $key", Toast.LENGTH_LONG).show()
             }
         }
     }

@@ -4,12 +4,12 @@ import android.app.Application
 import android.location.Location
 import android.os.HandlerThread
 import android.util.Log
-import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.*
 import com.trackinglibrary.services.TrackAutoRecorderService
 import com.trackinglibrary.services.TrackingService
+import com.trackinglibrary.settings.TrackerSettings
 import com.trackinglibrary.utils.ContextUtils
 import com.trackinglibrary.utils.DatabaseUtils
 import com.trackinglibrary.utils.RxBus
@@ -32,7 +32,7 @@ object TrackRecorder {
 
     @Synchronized
     @JvmStatic
-    fun initialize2(@NotNull context: Application) {
+    fun initialize(@NotNull context: Application) {
         if (initialized) {
             Log.i("info", "Tracker already initialized")
             // already initialized
@@ -42,6 +42,7 @@ object TrackRecorder {
 
         this.context = context
 
+        clearGeofenceAndStill()
         DatabaseUtils.initDatabase(context)
         startQueue()
         if (shouldContinueRecording()) {
@@ -49,6 +50,15 @@ object TrackRecorder {
         }
         if (shouldContinueRecordingRecognition()) {
             continueRecordingRecognition()
+        }
+    }
+
+    private fun clearGeofenceAndStill() {
+        val settings = TrackerSettings(context)
+        settings.executeTransaction {
+            settings.setGeofenceStr("")
+            settings.setGeofencePathsenseStr("")
+            settings.setStillRegistered(false)
         }
     }
 

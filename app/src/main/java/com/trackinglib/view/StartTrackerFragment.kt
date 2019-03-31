@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,9 @@ import com.jakewharton.rxbinding2.widget.RxSeekBar
 import com.trackinglib.R
 import com.trackinglib.presenter.StartTrackerPresenter
 import com.trackinglib.untils.ContextUtils
+import com.trackinglibrary.services.RegisterGeofenceService
+import com.trackinglibrary.services.RegisterPathsenseService
+import com.trackinglibrary.settings.TrackerSettings
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.fragment_start_tracker.*
@@ -38,6 +42,116 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        fun calcValue20(v: Int): Int {
+            val res = (20f - 1f) / 100f
+            val progressFloat = v.toFloat()
+            val res2 = Math.round(res * progressFloat).toFloat()
+            val value = (res2 + 1).toInt()
+            return value
+        }
+
+        fun updateStillSeekBar(value: Int) {
+            val result = (value - 1f) / (20f - 1f) * 100f
+            stillSeekBar.progress = result.toInt()
+        }
+
+        val settings = TrackerSettings(requireContext())
+        updateStillSeekBar(settings.getStill())
+        updateStillTitle20(settings.getStill())
+
+        val viewDisposable3 = RxSeekBar.changes(stillSeekBar)
+            .debounce(10, TimeUnit.MILLISECONDS)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { v ->
+                    val value = calcValue20(v)
+                    settings.executeTransaction {
+                        settings.setStill(value)
+                    }
+                    updateStillTitle20(value)
+                }
+                , { err ->
+                    err.printStackTrace()
+                }
+            )
+        stillSeekBar.progressDrawable.colorFilter = PorterDuffColorFilter(Color.BLUE, PorterDuff.Mode.MULTIPLY)
+        stillSeekBar.thumb.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_IN)
+        disposables.add(viewDisposable3)
+
+        fun calcValue150(v: Int): Int {
+            val res = (150f - 30f) / 100f
+            val progressFloat = v.toFloat()
+            val res2 = Math.round(res * progressFloat).toFloat()
+            val value = (res2 + 30).toInt()
+            return value
+        }
+
+        fun updateRadiusSeekBar(value: Int) {
+            val result = (value - 30f) / (150f - 30f) * 100f
+            seekBar2.progress = result.toInt()
+        }
+
+        updateRadiusSeekBar(settings.getGeofenceRadius())
+//        val result = calcValue150(settings.getGeofenceRadius())
+        updateRadiusTitle150(settings.getGeofenceRadius())
+
+        val viewDisposable2 = RxSeekBar.changes(seekBar2)
+            .debounce(10, TimeUnit.MILLISECONDS)
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe(
+                { v ->
+                    val value = calcValue150(v)
+                    settings.executeTransaction {
+                        settings.setGeofenceRadius(value)
+                    }
+                    updateRadiusTitle150(value)
+                }
+                , { err ->
+                    err.printStackTrace()
+                }
+            )
+        seekBar2.progressDrawable.colorFilter = PorterDuffColorFilter(Color.BLUE, PorterDuff.Mode.MULTIPLY)
+        seekBar2.thumb.setColorFilter(Color.BLUE, PorterDuff.Mode.SRC_IN)
+        disposables.add(viewDisposable2)
+
+        stillButton.setOnClickListener {
+            settings.executeTransaction {
+                settings.setStillRegistered(!settings.isStillRegistered())
+            }
+        }
+
+        registerGeofence.setOnClickListener {
+            val act = activity
+            if (act != null) {
+                registerGeofence.isEnabled = false
+                if (TextUtils.isEmpty(settings.getGeofenceStr())) {
+                    registerGeofence.text = "please wait..."
+                    com.trackinglibrary.utils.ContextUtils.startService(act, RegisterGeofenceService::class.java)
+                } else {
+                    settings.executeTransaction {
+                        settings.setGeofenceStr("")
+                        com.trackinglibrary.utils.ContextUtils.stopService(act, RegisterGeofenceService::class.java)
+                    }
+                }
+            }
+        }
+
+        registerPathsenseGeofence.setOnClickListener {
+            val act = activity
+            if (act != null) {
+                registerPathsenseGeofence.isEnabled = false
+                if (TextUtils.isEmpty(settings.getGeofencePathsenseStr())) {
+                    registerPathsenseGeofence.text = "please wait..."
+                    com.trackinglibrary.utils.ContextUtils.startService(act, RegisterPathsenseService::class.java)
+                } else {
+                    settings.executeTransaction {
+                        settings.setGeofencePathsenseStr("")
+                        com.trackinglibrary.utils.ContextUtils.stopService(act, RegisterPathsenseService::class.java)
+                    }
+                }
+            }
+        }
 
         startButton.setOnClickListener {
 
@@ -78,6 +192,14 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
         disposables.add(viewDisposable)
     }
 
+    private fun updateStillTitle20(value: Int) {
+        stillTextView.text = "Still: ${value}"
+    }
+
+    private fun updateRadiusTitle150(value: Int) {
+        geofenceRadiosTextView.text = "Geofence радиус в метрах: ${value}"
+    }
+
     override fun updateFrequencyTitle(freq: Long) {
         Log.d(tagName, "updateFrequencyTitle($freq)")
         freqTextView.text = "$freq мин."
@@ -98,6 +220,21 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
         Log.d(tagName, "updateStatus($started)")
         startRecognitionButton.text = if (started) "Stop recognition" else "Start recognition"
         startRecognitionButton.isEnabled = true
+    }
+
+    override fun updateGeofence(value: String) {
+        registerGeofence.text = if (TextUtils.isEmpty(value)) "Register geofence" else "Remove geofence"
+        registerGeofence.isEnabled = true
+    }
+
+    override fun updateGeofencePathsense(value: String) {
+        registerPathsenseGeofence.text =
+            if (TextUtils.isEmpty(value)) "Register Pathsense geofence" else "Remove Pathsense geofence"
+        registerPathsenseGeofence.isEnabled = true
+    }
+
+    override fun updateStillRegistered(value: Boolean) {
+        stillButton.text = if (value) "Disable still" else "Enable still"
     }
 
     override fun onDestroyView() {

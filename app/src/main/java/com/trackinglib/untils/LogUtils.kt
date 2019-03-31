@@ -54,11 +54,11 @@ object LogUtils {
                     val parsedData = parseActivityRecognitionData(it2)
                     val stillStr = if (TextUtils.isEmpty(parsedData.second[3])) "-" else parsedData.second[3]
                     val inVehicleStr = if (TextUtils.isEmpty(parsedData.second[6])) "-" else parsedData.second[6]
-                    val ON_BICYCLE = if (TextUtils.isEmpty(parsedData.second[0])) "-" else parsedData.second[0]
-                    val ON_FOOT = if (TextUtils.isEmpty(parsedData.second[1])) "-" else parsedData.second[1]
-                    val RUNNING = if (TextUtils.isEmpty(parsedData.second[2])) "-" else parsedData.second[2]
-                    val TILTING = if (TextUtils.isEmpty(parsedData.second[4])) "-" else parsedData.second[4]
-                    val WALKING = if (TextUtils.isEmpty(parsedData.second[5])) "-" else parsedData.second[5]
+                    val onBicycleStr = if (TextUtils.isEmpty(parsedData.second[0])) "-" else parsedData.second[0]
+                    val onFootStr = if (TextUtils.isEmpty(parsedData.second[1])) "-" else parsedData.second[1]
+                    val onRunningStr = if (TextUtils.isEmpty(parsedData.second[2])) "-" else parsedData.second[2]
+                    val titlingStr = if (TextUtils.isEmpty(parsedData.second[4])) "-" else parsedData.second[4]
+                    val walkingStr = if (TextUtils.isEmpty(parsedData.second[5])) "-" else parsedData.second[5]
 
                     write(
                         String.format(
@@ -68,7 +68,7 @@ object LogUtils {
                             inVehicleStr
                         )
                     )
-                    dataList.add("${format.format(parsedData.first)}*${stillStr}*${inVehicleStr}*${ON_BICYCLE}*${ON_FOOT}*${RUNNING}*${TILTING}*${WALKING}?")
+                    dataList.add("${format.format(parsedData.first)}*${stillStr}*${inVehicleStr}*${onBicycleStr}*${onFootStr}*${onRunningStr}*${titlingStr}*${walkingStr}?")
                 }
                 LogItem.Companion.Type.TYPE_SPEED.typeId -> {
                     val parsedData = parseActivityRecognitionData(it2)
@@ -80,7 +80,13 @@ object LogUtils {
                             java.lang.Float.parseFloat(speedStr)
                         )
                     )
-                    dataList.add("${format.format(parsedData.first)}* * * * * * * *${java.lang.Float.parseFloat(speedStr)}?")
+                    dataList.add(
+                        "${format.format(parsedData.first)}* * * * * * * *${String.format(
+                            Locale.US,
+                            "%.1f",
+                            java.lang.Float.parseFloat(speedStr)
+                        )}?"
+                    )
                 }
             }
         }

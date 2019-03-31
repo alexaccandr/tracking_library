@@ -8,7 +8,6 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import com.google.android.gms.location.DetectedActivity
-import com.kite.model.settings.TrackerSettings
 import com.trackinglibrary.database.TrackRecord
 import com.trackinglibrary.database.TrackRecordDao
 import com.trackinglibrary.model.ModelAdapter
@@ -16,10 +15,12 @@ import com.trackinglibrary.model.TrackAverageSpeed
 import com.trackinglibrary.model.TrackPoint
 import com.trackinglibrary.model.TrackStatus
 import com.trackinglibrary.prefs.BaseSettings
+import com.trackinglibrary.prefs.BaseSettings.Companion.SETTING_LAST_STILL_CONF
 import com.trackinglibrary.prefs.RealTimeSettings
 import com.trackinglibrary.prefs.SettingsController
 import com.trackinglibrary.prefs.SettingsControllerListener
 import com.trackinglibrary.services.NewMessageNotification
+import com.trackinglibrary.settings.TrackerSettings
 import com.trackinglibrary.utils.BluetoothUtils
 import com.trackinglibrary.utils.DatabaseUtils
 import com.trackinglibrary.utils.RxBus
@@ -50,7 +51,7 @@ internal class TrackHandlerQueue constructor(val context: Context, val settings:
     private var realm: Realm? = null
     private var track: TrackRecord? = null
 
-    private var settingsController: SettingsController? = null
+    private var rrtSettingsController: SettingsController? = null
     private var isRecordingTrack = false
     private var isPendingToStart = false
     private var isPendingToStop = false
@@ -203,9 +204,9 @@ internal class TrackHandlerQueue constructor(val context: Context, val settings:
 
     private fun registerRttController() {
         val rttSettings = RealTimeSettings(context)
-        if (settingsController == null) {
-            settingsController = SettingsController(
-                context, listener, rttSettings.preferences,
+        if (rrtSettingsController == null) {
+            rrtSettingsController = SettingsController(
+                context, rrtListener, rttSettings.preferences,
                 BaseSettings.SETTING_LAST_TRANSITION,
                 BaseSettings.SETTING_LAST_IN_VEHICLE_CONF,
                 BaseSettings.SETTING_LAST_STILL_CONF
@@ -214,15 +215,64 @@ internal class TrackHandlerQueue constructor(val context: Context, val settings:
     }
 
     private fun unregisterSettingsController() {
-        if (settingsController != null) {
-            settingsController!!.unregisterListeners()
-            settingsController = null
+        if (rrtSettingsController != null) {
+            rrtSettingsController!!.unregisterListeners()
+            rrtSettingsController = null
         }
     }
 
-    private val listener = object : SettingsControllerListener {
+
+    val WHAT_STILL = 12
+    val stillHandler = object : Handler() {
+        override fun handleMessage(msg: Message?) {
+            super.handleMessage(msg)
+
+            if (msg != null) {
+                if (msg.what == 12) {
+                    removeMessages(WHAT_STILL)
+                    val s = TrackerSettings(context)
+                    if (s.isStillRegistered()) {
+                        val isTrackStarted = TrackRecorder.hasStarted()
+                        val threshold = TrackerSettings(context).getStill()
+                        // show notification
+                        NewMessageNotification.createNotification(
+                            context,
+                            "Still threshold($threshold)",
+                            if (isTrackStarted) "Track already started" else "Start new track"
+                        )
+
+                        // start track if not started
+                        TrackRecorder.start()
+                    }
+                }
+            }
+        }
+    }
+
+    private val rrtListener = object : SettingsControllerListener {
         override fun onChange(context: Context, sharedPreferences: SharedPreferences, key: String) {
             putQueueNewRecognitionEvent()
+
+            if (key == SETTING_LAST_STILL_CONF) {
+                val s = TrackerSettings(context)
+                if (s.isStillRegistered()) {
+
+                    if (TrackRecorder.hasStarted()) {
+                        stillHandler.removeMessages(WHAT_STILL)
+                    } else {
+                        val rttSettings = RealTimeSettings(context)
+                        val threshold = s.getStill()
+                        val lastValue = rttSettings.getLastStillConf()
+                        if (lastValue in 1..threshold) {
+                            stillHandler.sendEmptyMessageDelayed(WHAT_STILL, TimeUnit.SECONDS.toMillis(10))
+                        } else {
+                            stillHandler.removeMessages(WHAT_STILL)
+                        }
+                    }
+                } else {
+                    stillHandler.removeMessages(WHAT_STILL)
+                }
+            }
         }
     }
 

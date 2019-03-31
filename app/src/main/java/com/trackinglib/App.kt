@@ -16,7 +16,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         createApplicationComponent()
-        TrackRecorder.initialize2(this)
+        TrackRecorder.initialize(this)
     }
 
     private fun createApplicationComponent() {

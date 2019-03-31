@@ -6,12 +6,12 @@ import android.os.Handler
 import android.os.Looper
 import com.arellomobile.mvp.InjectViewState
 import com.arellomobile.mvp.MvpPresenter
-import com.kite.model.settings.TrackerSettings
 import com.trackinglib.App
 import com.trackinglib.view.StartTrackerView
 import com.trackinglibrary.TrackRecorder
 import com.trackinglibrary.prefs.SettingsController
 import com.trackinglibrary.prefs.SettingsControllerListener
+import com.trackinglibrary.settings.TrackerSettings
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import java.util.concurrent.TimeUnit
@@ -37,6 +37,9 @@ class StartTrackerPresenter : MvpPresenter<StartTrackerView>() {
 
         viewState.updateTrackerStatus(TrackRecorder.hasStarted())
         viewState.updateRecognitionStatus(TrackRecorder.hasStartedRecognition())
+        viewState.updateGeofence(TrackerSettings(context).getGeofenceStr())
+        viewState.updateGeofencePathsense(TrackerSettings(context).getGeofencePathsenseStr())
+        viewState.updateStillRegistered(TrackerSettings(context).isStillRegistered())
 
         val tracksDisposable = TrackRecorder.registerTrackStatusChangeListener(AndroidSchedulers.mainThread()) {
             Handler(Looper.getMainLooper()).post {
@@ -48,11 +51,26 @@ class StartTrackerPresenter : MvpPresenter<StartTrackerView>() {
 
         listener = object : SettingsControllerListener {
             override fun onChange(context: Context, sharedPreferences: SharedPreferences, key: String) {
-                viewState.updateRecognitionStatus(TrackRecorder.hasStartedRecognition())
+                when (key) {
+                    TrackerSettings.KEY_RECOGNITION_STARTED -> viewState.updateRecognitionStatus(TrackRecorder.hasStartedRecognition())
+                    TrackerSettings.KEY_GEOFENCE_STR -> viewState.updateGeofence(TrackerSettings(context).getGeofenceStr())
+                    TrackerSettings.KEY_GEOFENCE_PATHSENSE_STR -> viewState.updateGeofencePathsense(
+                        TrackerSettings(
+                            context
+                        ).getGeofencePathsenseStr()
+                    )
+                    TrackerSettings.KEY_STILL_REGISTERED -> viewState.updateStillRegistered(TrackerSettings(context).isStillRegistered())
+                }
             }
         }
         settingsController =
-            SettingsController(context, listener!!, settings.preferences, TrackerSettings.KEY_RECOGNITION_STARTED)
+            SettingsController(
+                context, listener!!, settings.preferences,
+                TrackerSettings.KEY_RECOGNITION_STARTED,
+                TrackerSettings.KEY_GEOFENCE_STR,
+                TrackerSettings.KEY_GEOFENCE_PATHSENSE_STR,
+                TrackerSettings.KEY_STILL_REGISTERED
+            )
     }
 
     override fun attachView(view: StartTrackerView?) {

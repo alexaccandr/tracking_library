@@ -26,23 +26,42 @@
         android:layout_toRightOf="@+id/startDateTitleView"
         lint:text="10.10.2010" />
 
-    <TextView
+   <!-- <TextView
         android:id="@+id/locationTitleView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/startDateTitleView"
         android:layout_alignLeft="@+id/startDateTitleView"
         android:text="Адрес: "
-        android:textStyle="bold" />
+        android:textStyle="bold" />-->
 
-    <TextView
+    <!--<TextView
         android:layout_marginRight="20dp"
         android:id="@+id/locationView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/startDateTitleView"
         android:layout_toRightOf="@+id/startDateTitleView"
-        lint:text="Москва" />
+        lint:text="Москва" />-->
+
+
+    <TextView
+         android:id="@+id/endDateTitleView"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layout_below="@+id/startDateTitleView"
+         android:layout_alignLeft="@+id/startDateTitleView"
+         android:text="Дата стопа: "
+         android:textStyle="bold" />
+
+    <TextView
+        android:layout_marginRight="20dp"
+        android:id="@+id/endDateView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/startDateTitleView"
+        android:layout_toRightOf="@+id/startDateTitleView" />
+
 
     <TextView
         android:layout_width="wrap_content"

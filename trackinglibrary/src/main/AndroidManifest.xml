@@ -11,6 +11,20 @@
         <service android:name=".services.ActivityTransitionService"/>
         <service android:name=".services.ActivityConfidenceStatisticsService"/>
         <service android:name=".services.TrackAutoRecorderService"/>
+        <service android:name=".services.RegisterGeofenceService"/>
+        <service android:name=".services.RegisterPathsenseService"/>
+        <service android:name=".services.GeofenceIntentService"/>
+        <receiver android:name=".services.PathSenseGeofenceReceiver"/>
+
+        <!-- Client ID -->
+        <meta-data
+                android:name="com.pathsense.android.sdk.CLIENT_ID"
+                android:value="OfUEKUH2UhpFTlByPIa7s81OtqNJvPco0kCGEGRZ"/>
+
+        <!-- Pathsense api key -->
+        <meta-data
+                android:name="com.pathsense.android.sdk.API_KEY"
+                android:value="ei0tt51wx98iH8hp0E1Wn6zLpYLUKuxH6C7k9VH5"/>
     </application>
 
 </manifest>

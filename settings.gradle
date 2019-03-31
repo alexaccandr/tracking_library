@@ -1,1 +1,1 @@
-include ':app', ':trackinglibrary'
+include ':app', ':trackinglibrary', ':pathsense-android-sdk'

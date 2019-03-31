@@ -82,6 +82,13 @@
                 android:layout_height="wrap_content"/>
 
         <Button
+                android:id="@+id/sendToS3"
+                android:text="to S3"
+                android:layout_weight="0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        <Button
                 android:id="@+id/clearData"
                 android:text="clear collected data"
                 android:layout_weight="0"

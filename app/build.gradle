@@ -7,10 +7,10 @@ apply plugin: 'io.fabric'
 android {
     signingConfigs {
         config {
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-            storeFile file('../TestTrackingLib/debug.keystore')
-            storePassword 'android'
+            keyAlias 'key0'
+            keyPassword '1133511zxc'
+            storeFile file('C:/develop/projects/lib_v2/tracking_library/raxel_recognition.jks')
+            storePassword '1133511zxc'
         }
     }
     compileSdkVersion 28
@@ -18,19 +18,26 @@ android {
         applicationId "com.activity_recognition_test"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 8
-        versionName "8.0"
+        versionCode 11
+        versionName "11.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        signingConfig signingConfigs.config
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.config
+        }
+        debug {
+            signingConfig signingConfigs.config
         }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    productFlavors {
     }
 }
 
@@ -40,11 +47,9 @@ dependencies {
     implementation "com.android.support:appcompat-v7:$app_compat_version"
     implementation "com.android.support.constraint:constraint-layout:$constraint_layout_version"
     implementation "com.android.support:design:$design_version"
-    implementation "com.google.android.gms:play-services-maps:$play_services_maps_version"
-
     // library
-    implementation project(":trackinglibrary")
-    implementation 'com.google.android.gms:play-services-location:11.8.0'
+    implementation project(':trackinglibrary')
+    implementation 'com.google.android.gms:play-services-location:16.0.0'
     // rx
     implementation "io.reactivex.rxjava2:rxandroid:$rx_android_version"
     implementation "io.reactivex.rxjava2:rxjava:$rx_java_version"
@@ -56,11 +61,17 @@ dependencies {
     // dagger
     implementation "com.google.dagger:dagger:$dagger2_version"
     kapt "com.google.dagger:dagger-compiler:$dagger2_version"
-    implementation "com.google.android.gms:play-services-maps:$play_services_maps_version"
+    implementation 'com.google.android.gms:play-services-maps:16.1.0'
     implementation "com.jjoe64:graphview:$graphview_version"
     implementation "io.reactivex.rxjava2:rxandroid:$rx_android_version"
     implementation "io.reactivex.rxjava2:rxjava:$rx_java_version"
     implementation "com.jakewharton.rxbinding2:rxbinding:$rx_binding_version"
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'com.github.hsmnzaydn:easy-csv:1.0.0'
+}
+
+repositories {
+    flatDir {
+        dirs 'libs'
+    }
 }

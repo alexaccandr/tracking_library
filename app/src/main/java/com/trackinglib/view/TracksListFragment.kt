@@ -11,7 +11,15 @@ import com.arellomobile.mvp.MvpAppCompatFragment
 import com.arellomobile.mvp.presenter.InjectPresenter
 import com.trackinglib.R
 import com.trackinglib.presenter.TracksListPresenter
+import com.trackinglib.untils.ViewModelAdapter
 import com.trackinglib.viewmodel.TrackViewModel
+import com.trackinglibrary.database.TrackRecord
+import com.trackinglibrary.model.ModelAdapter
+import com.trackinglibrary.utils.DatabaseUtils
+import io.realm.Realm
+import io.realm.RealmChangeListener
+import io.realm.RealmResults
+import io.realm.Sort
 import kotlinx.android.synthetic.main.fragment_track_list.*
 
 class TracksListFragment : MvpAppCompatFragment(), TracksListView {
@@ -21,6 +29,10 @@ class TracksListFragment : MvpAppCompatFragment(), TracksListView {
 
     private lateinit var viewAdapter: TracksListAdapter
     private lateinit var viewManager: RecyclerView.LayoutManager
+
+    private lateinit var realm: Realm
+    private lateinit var listener: RealmChangeListener<RealmResults<TrackRecord>>
+    private lateinit var result: RealmResults<TrackRecord>
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_track_list, null)
@@ -39,6 +51,21 @@ class TracksListFragment : MvpAppCompatFragment(), TracksListView {
             // use a linear layout manager
             layoutManager = viewManager
         }
+        realm = Realm.getDefaultInstance()
+        result = realm.where(TrackRecord::class.java).findAll().sort("startDate", Sort.DESCENDING)
+        listener = RealmChangeListener { tracks ->
+            val t = ModelAdapter.adaptTracks(tracks)
+            val tAdapted= t.map {
+                ViewModelAdapter.adaptTrack(it)
+            }.toTypedArray()
+            updateTracksList(tAdapted)
+        }
+        result.addChangeListener(listener)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        DatabaseUtils.close(realm)
     }
 
     override fun updateTracksList(tracks: Array<TrackViewModel>) {
