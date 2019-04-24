@@ -1,14 +1,17 @@
 package com.trackinglib.view
 
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
+import android.support.v4.content.FileProvider
 import android.text.TextUtils
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.arellomobile.mvp.MvpAppCompatFragment
 import com.arellomobile.mvp.presenter.InjectPresenter
 import com.jakewharton.rxbinding2.widget.RxSeekBar
@@ -18,10 +21,14 @@ import com.trackinglib.untils.ContextUtils
 import com.trackinglibrary.services.RegisterGeofenceService
 import com.trackinglibrary.services.RegisterPathsenseService
 import com.trackinglibrary.settings.TrackerSettings
+import com.trackinglibrary.utils.LogUtils
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import kotlinx.android.synthetic.main.fragment_start_tracker.*
+import net.ozaydin.serkan.easy_csv.EasyCsv
+import java.io.File
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 
 class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
@@ -175,6 +182,10 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
             }
         }
 
+        saveLogsToCsv.setOnClickListener {
+            saveLogsToFile()
+        }
+
         val viewDisposable = RxSeekBar.changes(seekBar)
             .debounce(100, TimeUnit.MILLISECONDS)
             .observeOn(AndroidSchedulers.mainThread())
@@ -240,5 +251,49 @@ class StartTrackerFragment : MvpAppCompatFragment(), StartTrackerView {
     override fun onDestroyView() {
         disposables.dispose()
         super.onDestroyView()
+    }
+
+    private fun saveLogsToFile() {
+        saveLogsToCsv.isEnabled = false
+        thread(start = true) {
+            try {
+//                LogUtils.deleteDirectory(LogUtils.getExtCacheDir())
+
+                fun readFileAsLinesUsingUseLines(file: File): List<String> = file.useLines { it.toList() }
+
+                val easyCsv = EasyCsv(activity)
+                val txtLogFile = File(LogUtils.getExtCacheDir(), LogUtils.autoAccidentFileName)
+                LogUtils.convertToCsvDetectorLogs(easyCsv, readFileAsLinesUsingUseLines(txtLogFile))
+
+                val intentShareFile = Intent(Intent.ACTION_SEND)
+                val fileWithinMyDir = File(LogUtils.getExtCacheDir(), "auto_accident_detect.csv")
+
+                if (fileWithinMyDir.exists()) {
+                    intentShareFile.type = "application/csv"
+
+                    val uri = FileProvider.getUriForFile(
+                        context!!,
+                        context!!.applicationContext.packageName + ".provider",
+                        fileWithinMyDir
+                    );
+                    intentShareFile.putExtra(Intent.EXTRA_STREAM, uri)
+
+                    intentShareFile.putExtra(
+                        Intent.EXTRA_SUBJECT,
+                        "Sharing File..."
+                    )
+                    intentShareFile.putExtra(Intent.EXTRA_TEXT, "Sharing File...")
+
+                    startActivity(Intent.createChooser(intentShareFile, "Share File"))
+                }
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                Toast.makeText(requireActivity(), "Save logs error, ${e.message}", Toast.LENGTH_LONG).show()
+            } finally {
+                requireActivity().runOnUiThread {
+                    saveLogsToCsv.isEnabled = true
+                }
+            }
+        }
     }
 }

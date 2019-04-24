@@ -2,6 +2,8 @@ package com.trackinglibrary.utils
 
 import android.location.Location
 import android.location.LocationManager
+import com.google.android.gms.location.LocationRequest
+import java.util.concurrent.TimeUnit
 
 internal object LocationUtils {
 
@@ -23,5 +25,21 @@ internal object LocationUtils {
         destinationLocation.latitude = x2
         destinationLocation.longitude = y2
         return originLocation.distanceTo(destinationLocation).toDouble()
+    }
+
+
+    fun createFusedRequest(
+        priority: Int,
+        intervalSec: Long,
+        fastestIntervalSec: Long,
+        smallestDisplacement: Float
+    ): LocationRequest {
+        val request = LocationRequest.create()
+        request.priority = priority
+        request.expirationTime
+        request.interval = TimeUnit.SECONDS.toMillis(intervalSec)
+        request.fastestInterval = TimeUnit.SECONDS.toMillis(fastestIntervalSec)
+        request.smallestDisplacement = smallestDisplacement
+        return request
     }
 }

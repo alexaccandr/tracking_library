@@ -1,4 +1,4 @@
-package com.trackinglib.untils
+package com.trackinglibrary.utils
 
 import android.os.Environment
 import android.text.TextUtils
@@ -14,7 +14,7 @@ import java.util.*
 
 object LogUtils {
 
-    private val format = SimpleDateFormat("d HH:mm:ss", Locale.US)
+    private val format = SimpleDateFormat("dd MMM HH:mm:ss", Locale.US)
 
     fun writeRecognitionLogs(easyCsv: EasyCsv, recognitionItems: List<LogItem>) {
 
@@ -102,7 +102,37 @@ object LogUtils {
                 Log.e("tag", "tag")
             }
         })
-//        }
+    }
+
+    fun convertToCsvDetectorLogs(easyCsv: EasyCsv, recognitionItems: List<String>) {
+
+        easyCsv.setSeparatorColumn("*");
+        easyCsv.setSeperatorLine("?");
+        val headerList = ArrayList<String>()
+
+        val dataList = ArrayList<String>()
+
+        dataList.apply {
+            add("Time*SPEED*accX*accY*accZ*maxAcc*RESULT?")
+        }
+
+        recognitionItems.forEach {
+            val list = it.split(",").map { it.trim() }
+            val kmh = list[1].toFloat()
+            dataList.add("${format.format(Date(list[0].toLong()))}*$kmh*${list[2]}*${list[3]}*${list[4]}*${list[5]}*${list[6]}?")
+        }
+
+        easyCsv.createCsvFile("auto_accident_detect", headerList, dataList, 123, object : FileCallback {
+            override fun onSuccess(p0: File?) {
+                Log.e("tag", "tag")
+                val from = p0
+                moveFile(from!!, getExtCacheDir())
+            }
+
+            override fun onFail(p0: String?) {
+                Log.e("tag", "tag")
+            }
+        })
     }
 
     @Throws(IOException::class)
@@ -155,6 +185,7 @@ object LogUtils {
         return file
     }
 
+    val cacheDir = String.format("%s/%s", Environment.getExternalStorageDirectory().absolutePath, "test_logs")
     @Throws(IOException::class)
     fun getExtCacheDir(): File {
 
@@ -169,7 +200,6 @@ object LogUtils {
             return file
         }
 
-        val cacheDir = String.format("%s/%s", Environment.getExternalStorageDirectory().absolutePath, "test_logs")
         return checkAndCreateDir(cacheDir)
     }
 
@@ -185,5 +215,20 @@ object LogUtils {
         }
         if (!f.delete())
             throw FileNotFoundException("Failed to delete file: $f")
+    }
+
+    val autoAccidentFileName = "auto_accident" + ".txt"
+    fun writeAccidentLog(str: String) {
+        try {
+            val cacheFile = getExtCacheDir()
+
+            val fileToWrite = File(cacheFile, autoAccidentFileName)
+            FileWriter(fileToWrite, true).use {
+                it.write(str)
+                it.write("\n")
+            }
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 }

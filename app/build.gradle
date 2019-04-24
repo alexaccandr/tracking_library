@@ -15,7 +15,7 @@ android {
     }
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.activity_recognition_test"
+        applicationId "com.activity_auto_accident_test"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 11
@@ -68,10 +68,18 @@ dependencies {
     implementation "com.jakewharton.rxbinding2:rxbinding:$rx_binding_version"
     implementation 'com.google.code.gson:gson:2.8.2'
     implementation 'com.github.hsmnzaydn:easy-csv:1.0.0'
+    implementation 'com.raxel.tracking:sdk-alpha:1.6.1'
 }
 
 repositories {
     flatDir {
         dirs 'libs'
+    }
+    maven {
+        url "s3://s3.raxeltelematics.com"
+        credentials(AwsCredentials) {
+            accessKey "AKIAIJC3ZQKYCFAC2BPA"
+            secretKey "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"
+        }
     }
 }

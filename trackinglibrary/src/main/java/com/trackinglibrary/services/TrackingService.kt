@@ -2,21 +2,21 @@ package com.trackinglibrary.services
 
 import android.content.Intent
 import android.location.Location
-import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
-import android.os.Message
+import android.os.Process
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.google.gson.Gson
-import com.trackinglibrary.TrackRecorder
 import com.trackinglibrary.database.LogItem
 import com.trackinglibrary.prefs.MyLocaation
 import com.trackinglibrary.prefs.RealTimeSettings
 import io.realm.Realm
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 internal class TrackingService : BaseTrackerService() {
+
+    private var autoDetectController: AutoDetector? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -26,18 +26,33 @@ internal class TrackingService : BaseTrackerService() {
         return locationCallback
     }
 
-    lateinit var stopTrackingHandler: Handler
+    //    lateinit var stopTrackingHandler: Handler
     val what = 100
+
     override fun onCreate() {
         super.onCreate()
-        stopTrackingHandler = StopTrackHandler()
+        val handler = HandlerThread("TrackerServiceHandler", Process.THREAD_PRIORITY_BACKGROUND)
+        handler.start()
+        val looper = handler.looper
+        autoDetectController = AutoDetector(this, looper) {
 
-        resetStopMessage()
+        }
+        autoDetectController!!.requestUpdate()
+//        stopTrackingHandler = StopTrackHandler()
+
+//        resetStopMessage()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if(autoDetectController != null) {
+            autoDetectController!!.cancelRequest()
+        }
     }
 
     private fun resetStopMessage() {
-        stopTrackingHandler.removeMessages(what)
-        stopTrackingHandler.sendEmptyMessageDelayed(what, TimeUnit.MINUTES.toMillis(5))
+//        stopTrackingHandler.removeMessages(what)
+//        stopTrackingHandler.sendEmptyMessageDelayed(what, TimeUnit.MINUTES.toMillis(5))
     }
 
     private val locationCallback = object : LocationCallback() {
@@ -93,12 +108,12 @@ internal class TrackingService : BaseTrackerService() {
     }
 }
 
-class StopTrackHandler : Handler() {
-    override fun handleMessage(msg: Message?) {
-        super.handleMessage(msg)
-
-        if (msg != null && msg.what == 100) {
-            TrackRecorder.stop()
-        }
-    }
-}
+//class StopTrackHandler : Handler() {
+//    override fun handleMessage(msg: Message?) {
+//        super.handleMessage(msg)
+//
+//        if (msg != null && msg.what == 100) {
+//            TrackRecorder.stop()
+//        }
+//    }
+//}

@@ -15,7 +15,7 @@ import android.widget.Toast
 import com.google.android.gms.location.DetectedActivity
 import com.google.gson.Gson
 import com.trackinglib.R
-import com.trackinglib.untils.LogUtils
+import com.trackinglibrary.utils.LogUtils
 import com.trackinglibrary.database.LogItem
 import com.trackinglibrary.prefs.*
 import com.trackinglibrary.utils.S3Publisher
@@ -130,7 +130,7 @@ class RecognitionFragment : Fragment(), SettingsControllerListener {
         thread(start = true) {
             try {
                 Realm.getDefaultInstance().use {
-                    LogUtils.deleteDirectory(LogUtils.getExtCacheDir())
+//                    LogUtils.deleteDirectory(LogUtils.getExtCacheDir())
                     val result = it.where(LogItem::class.java).sort("date").findAll()
 
                     val easyCsv = EasyCsv(activity)
@@ -139,7 +139,7 @@ class RecognitionFragment : Fragment(), SettingsControllerListener {
                     val intentShareFile = Intent(Intent.ACTION_SEND)
                     val fileWithinMyDir = File(LogUtils.getExtCacheDir(), "logs.csv")
 
-                    if (fileWithinMyDir.exists()) {
+                    if (fileWithinMyDir.exists())  {
                         intentShareFile.type = "application/csv"
 
                         val uri = FileProvider.getUriForFile(

@@ -15,6 +15,7 @@ import com.trackinglib.R
 import com.trackinglib.untils.ContextUtils
 import com.trackinglibrary.services.NewMessageNotification
 import kotlinx.android.synthetic.main.activity_main.*
+import refactored.sdk.TrackingApi
 
 
 class MainActivity : AppCompatActivity() {
@@ -33,18 +34,17 @@ class MainActivity : AppCompatActivity() {
 
         container.addOnPageChangeListener(TabLayout.TabLayoutOnPageChangeListener(tabs))
         tabs.addOnTabSelectedListener(TabLayout.ViewPagerOnTabSelectedListener(container))
-
         ContextUtils.askForLocationPermission(this)
 //        ContextUtils.askForStoragePermission(this)
-
-        val filter = IntentFilter("SUPER_ACTION")
-        receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                Log.e("SUPER!!!!", "AAAA")
-            }
-        }
-        registerReceiver(receiver, filter)
-        NewMessageNotification.createNotification(this, "aaa", "sss")
+TrackingApi
+//        val filter = IntentFilter("SUPER_ACTION")
+//        receiver = object : BroadcastReceiver() {
+//            override fun onReceive(context: Context?, intent: Intent?) {
+//                Log.e("SUPER!!!!", "AAAA")
+//            }
+//        }
+//        registerReceiver(receiver, filter)
+//        NewMessageNotification.createNotification(this, "aaa", "sss")
     }
 
 
